@@ -14,7 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      pets: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          data_nascimento: string | null
+          data_perdido: string | null
+          endereco: string | null
+          foto_url: string | null
+          id: string
+          nome_dono: string
+          nome_pet: string
+          status_perdido: boolean
+          telefone: string
+          ultimo_horario: string | null
+          ultimo_local: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          data_nascimento?: string | null
+          data_perdido?: string | null
+          endereco?: string | null
+          foto_url?: string | null
+          id: string
+          nome_dono: string
+          nome_pet: string
+          status_perdido?: boolean
+          telefone: string
+          ultimo_horario?: string | null
+          ultimo_local?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          data_nascimento?: string | null
+          data_perdido?: string | null
+          endereco?: string | null
+          foto_url?: string | null
+          id?: string
+          nome_dono?: string
+          nome_pet?: string
+          status_perdido?: boolean
+          telefone?: string
+          ultimo_horario?: string | null
+          ultimo_local?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
