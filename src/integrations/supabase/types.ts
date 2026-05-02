@@ -285,7 +285,7 @@ export type Database = {
         Returns: string
       }
       admin_login: {
-        Args: { p_email: string; p_senha: string }
+        Args: { p_email: string; p_senha_hash: string }
         Returns: {
           ativo: boolean
           email: string
