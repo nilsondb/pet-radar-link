@@ -555,7 +555,17 @@ const Saude = () => {
               />
             </div>
             <div className="space-y-1">
-              <Label>Arquivo (PDF, imagem)</Label>
+              <Label>Arquivo (PDF, imagem){editingExameId && editingExameUrl ? " — substituir" : ""}</Label>
+              {editingExameId && editingExameUrl && !exameForm.file && (
+                <a
+                  href={editingExameUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline mb-1"
+                >
+                  <ExternalLink className="w-3 h-3" /> Arquivo atual
+                </a>
+              )}
               <Input
                 type="file"
                 accept="application/pdf,image/*"
