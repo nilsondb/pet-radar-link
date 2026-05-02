@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 export type AdminSession = {
   id: string;
   email: string;
-  nome: string | null;
+  nome?: string | null;
 };
 
 const KEY = "admin_auth";
@@ -22,14 +22,22 @@ export const isAdminAuthed = () => !!getAdminSession();
 
 export const adminLogout = () => {
   localStorage.removeItem(KEY);
-  // legacy
   localStorage.removeItem("isAdmin");
 };
 
+const sha256 = async (text: string): Promise<string> => {
+  const buf = new TextEncoder().encode(text);
+  const hash = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+};
+
 export const adminLogin = async (email: string, senha: string) => {
+  const senhaHash = await sha256(senha);
   const { data, error } = await supabase.rpc("admin_login", {
     p_email: email,
-    p_senha: senha,
+    p_senha_hash: senhaHash,
   });
   if (error) throw error;
   const row = Array.isArray(data) ? data[0] : data;
@@ -40,16 +48,21 @@ export const adminLogin = async (email: string, senha: string) => {
 };
 
 export const adminSetPassword = async (id: string, senha: string) => {
-  const { error } = await supabase.rpc("admin_set_password", { p_id: id, p_senha: senha });
+  const senhaHash = await sha256(senha);
+  const { error } = await supabase
+    .from("admins")
+    .update({ senha_hash: senhaHash })
+    .eq("id", id);
   if (error) throw error;
 };
 
 export const adminCreate = async (email: string, senha: string, nome: string) => {
-  const { data, error } = await supabase.rpc("admin_create", {
-    p_email: email,
-    p_senha: senha,
-    p_nome: nome,
-  });
+  const senhaHash = await sha256(senha);
+  const { data, error } = await supabase
+    .from("admins")
+    .insert({ email, senha_hash: senhaHash, nome, ativo: true })
+    .select("id")
+    .single();
   if (error) throw error;
-  return data as string;
+  return data.id as string;
 };
