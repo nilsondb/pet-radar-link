@@ -240,13 +240,22 @@ export const VacinasView = ({ tipo }: Props) => {
                         {v.nome_vacina}
                       </h3>
                     </div>
-                    <button
-                      onClick={() => handleDelete(v.id)}
-                      className="text-muted-foreground hover:text-destructive p-1"
-                      aria-label="Remover"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => openEdit(v)}
+                        className="text-muted-foreground hover:text-primary p-1"
+                        aria-label="Editar"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(v.id)}
+                        className="text-muted-foreground hover:text-destructive p-1"
+                        aria-label="Remover"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
 
                   <div className="mt-3 space-y-2 text-sm">
