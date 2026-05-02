@@ -14,6 +14,11 @@ import Vermifugacao from "./pages/Vermifugacao.tsx";
 import Saude from "./pages/Saude.tsx";
 import Admin from "./pages/Admin.tsx";
 import AdminLogin from "./pages/AdminLogin.tsx";
+import AdminPets from "./pages/AdminPets.tsx";
+import AdminUsuarios from "./pages/AdminUsuarios.tsx";
+import AdminFinanceiro from "./pages/AdminFinanceiro.tsx";
+import AdminPerfil from "./pages/AdminPerfil.tsx";
+import AdminConfiguracoes from "./pages/AdminConfiguracoes.tsx";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +39,11 @@ const App = () => (
           <Route path="/saude" element={<Saude />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/admin/pets" element={<AdminPets />} />
+          <Route path="/admin/usuarios" element={<AdminUsuarios />} />
+          <Route path="/admin/financeiro" element={<AdminFinanceiro />} />
+          <Route path="/admin/perfil" element={<AdminPerfil />} />
+          <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

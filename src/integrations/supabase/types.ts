@@ -35,6 +35,36 @@ export type Database = {
         }
         Relationships: []
       }
+      admins: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          email: string
+          id: string
+          nome: string | null
+          senha_hash: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          email: string
+          id?: string
+          nome?: string | null
+          senha_hash: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          email?: string
+          id?: string
+          nome?: string | null
+          senha_hash?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       exames: {
         Row: {
           arquivo_url: string | null
@@ -107,6 +137,39 @@ export type Database = {
           observacoes?: string | null
           pet_id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      pagamentos: {
+        Row: {
+          created_at: string
+          data_pagamento: string | null
+          descricao: string | null
+          id: string
+          pet_id: string | null
+          status: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          data_pagamento?: string | null
+          descricao?: string | null
+          id?: string
+          pet_id?: string | null
+          status?: string
+          updated_at?: string
+          valor?: number
+        }
+        Update: {
+          created_at?: string
+          data_pagamento?: string | null
+          descricao?: string | null
+          id?: string
+          pet_id?: string | null
+          status?: string
+          updated_at?: string
+          valor?: number
         }
         Relationships: []
       }
@@ -217,7 +280,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      admin_create: {
+        Args: { p_email: string; p_nome: string; p_senha: string }
+        Returns: string
+      }
+      admin_login: {
+        Args: { p_email: string; p_senha: string }
+        Returns: {
+          ativo: boolean
+          email: string
+          id: string
+          nome: string
+        }[]
+      }
+      admin_set_password: {
+        Args: { p_id: string; p_senha: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
