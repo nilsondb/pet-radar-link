@@ -203,7 +203,7 @@ export const VacinasView = ({ tipo }: Props) => {
 
       <main className="max-w-2xl mx-auto p-4 space-y-4">
         <Button
-          onClick={() => setDialogOpen(true)}
+          onClick={openCreate}
           className="w-full"
           size="lg"
         >
