@@ -1,18 +1,20 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useIdFromUrl, uploadPetPhoto } from "@/lib/petUtils";
+import { useIdFromUrl, useTokenFromUrl, uploadPetPhoto, validateActivationToken } from "@/lib/petUtils";
 import { PetHeader } from "@/components/PetHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, PawPrint } from "lucide-react";
+import { Loader2, PawPrint, ShieldAlert } from "lucide-react";
 
 const Setup = () => {
   const id = useIdFromUrl();
+  const token = useTokenFromUrl();
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
+  const [tokenValid, setTokenValid] = useState(false);
   const [saving, setSaving] = useState(false);
   const [foto, setFoto] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>("");
@@ -31,14 +33,22 @@ const Setup = () => {
       return;
     }
     (async () => {
-      const { data } = await supabase.from("pets").select("id").eq("id", id).maybeSingle();
-      if (data) {
-        navigate(`/dashboard?id=${id}`, { replace: true });
-      } else {
-        setChecking(false);
+      const { data: existing } = await supabase.from("pets").select("id").eq("id", id).maybeSingle();
+      if (existing) {
+        const qs = token ? `?id=${id}&token=${token}` : `?id=${id}`;
+        navigate(`/dashboard${qs}`, { replace: true });
+        return;
       }
+      if (!token) {
+        setTokenValid(false);
+        setChecking(false);
+        return;
+      }
+      const valid = await validateActivationToken(id, token);
+      setTokenValid(valid);
+      setChecking(false);
     })();
-  }, [id, navigate]);
+  }, [id, token, navigate]);
 
   const handleFile = (f: File | null) => {
     setFoto(f);
