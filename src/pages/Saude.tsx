@@ -345,7 +345,7 @@ const Saude = () => {
 
           {/* MEDICAMENTOS */}
           <TabsContent value="medicamentos" className="space-y-3 mt-4">
-            <Button onClick={() => setMedDialog(true)} className="w-full" size="lg">
+            <Button onClick={openCreateMed} className="w-full" size="lg">
               <Plus className="w-5 h-5 mr-1" /> Adicionar medicamento
             </Button>
             {meds.length === 0 ? (
