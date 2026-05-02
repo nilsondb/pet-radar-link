@@ -39,7 +39,7 @@ const PetPublic = () => {
       setPet(visible);
       setLoading(false);
 
-      if (data && navigator.geolocation && podeAtualizar(data.ultimo_horario)) {
+      if (visible && navigator.geolocation && podeAtualizar(visible.ultimo_horario)) {
         navigator.geolocation.getCurrentPosition(
           async (pos) => {
             await salvarLocalizacao(id, pos.coords.latitude, pos.coords.longitude);
