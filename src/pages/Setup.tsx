@@ -72,8 +72,12 @@ const Setup = () => {
         foto_url,
       });
       if (error) throw error;
+      // Mark token as used (best-effort)
+      if (token) {
+        await supabase.from("activation_tokens").update({ used: true }).eq("id", id);
+      }
       toast.success("Pet cadastrado com sucesso! 🐾");
-      navigate(`/dashboard?id=${id}`);
+      navigate(`/dashboard?id=${id}${token ? `&token=${token}` : ""}`);
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar");
     } finally {
@@ -88,7 +92,7 @@ const Setup = () => {
           <PawPrint className="w-12 h-12 mx-auto text-primary mb-3" />
           <h1 className="text-xl font-bold mb-2">ID não encontrado</h1>
           <p className="text-muted-foreground">
-            Aproxime sua tag NFC ou abra o link com <code>?id=SEU_ID</code>.
+            Aproxime sua tag NFC para abrir o link de ativação.
           </p>
         </div>
       </div>
@@ -99,6 +103,20 @@ const Setup = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!tokenValid) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <div className="pet-card max-w-md text-center">
+          <ShieldAlert className="w-12 h-12 mx-auto text-destructive mb-3" />
+          <h1 className="text-xl font-bold mb-2">Link de ativação inválido</h1>
+          <p className="text-muted-foreground text-sm">
+            Use o link original fornecido com a sua tag NFC Pet_ID para ativar o cadastro.
+          </p>
+        </div>
       </div>
     );
   }
