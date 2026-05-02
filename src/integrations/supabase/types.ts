@@ -65,6 +65,39 @@ export type Database = {
         }
         Relationships: []
       }
+      vacinas: {
+        Row: {
+          created_at: string
+          data_aplicacao: string
+          id: string
+          nome_vacina: string
+          observacoes: string | null
+          pet_id: string
+          proxima_dose: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_aplicacao: string
+          id?: string
+          nome_vacina: string
+          observacoes?: string | null
+          pet_id: string
+          proxima_dose?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_aplicacao?: string
+          id?: string
+          nome_vacina?: string
+          observacoes?: string | null
+          pet_id?: string
+          proxima_dose?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
