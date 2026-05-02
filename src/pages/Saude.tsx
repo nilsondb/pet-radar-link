@@ -535,7 +535,7 @@ const Saude = () => {
       <Dialog open={exameDialog} onOpenChange={setExameDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Novo exame</DialogTitle>
+            <DialogTitle>{editingExameId ? "Editar exame" : "Novo exame"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
             <div className="space-y-1">
