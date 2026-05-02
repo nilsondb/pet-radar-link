@@ -89,8 +89,8 @@ const PetPublic = () => {
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="pet-card text-center max-w-md">
           <PawPrint className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-          <h1 className="text-xl font-bold mb-2">Pet não encontrado</h1>
-          <p className="text-muted-foreground">Esta tag ainda não foi cadastrada.</p>
+          <h1 className="text-xl font-bold mb-2">Este pet ainda não foi registrado</h1>
+          <p className="text-muted-foreground">Esta tag NFC ainda não está vinculada a um pet.</p>
         </div>
       </div>
     );
