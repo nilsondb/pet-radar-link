@@ -1,4 +1,4 @@
-import { Dog, Pencil, Siren, LogOut, X, Syringe, Bug, HeartPulse } from "lucide-react";
+import { Pencil, Siren, LogOut, X, Syringe, Bug, HeartPulse } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -12,9 +12,8 @@ export const PetSidebar = ({ id, open, onClose }: Props) => {
   const navigate = useNavigate();
 
   const items = [
-    { to: `/pet?id=${id}`, label: "Meu Pet", icon: Dog },
-    { to: `/edit?id=${id}`, label: "Editar Cadastro", icon: Pencil },
     { to: `/dashboard?id=${id}`, label: "Status do Pet", icon: Siren },
+    { to: `/edit?id=${id}`, label: "Editar Cadastro", icon: Pencil },
     { to: `/vacinas?id=${id}`, label: "Vacinação", icon: Syringe },
     { to: `/vermifugacao?id=${id}`, label: "Vermifugação", icon: Bug },
     { to: `/saude?id=${id}`, label: "Saúde do Pet", icon: HeartPulse },

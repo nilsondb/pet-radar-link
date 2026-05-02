@@ -25,6 +25,7 @@ import {
   Clock,
   CheckCircle2,
   Trash2,
+  Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -78,6 +79,7 @@ export const VacinasView = ({ tipo }: Props) => {
   const [vacinas, setVacinas] = useState<Vacina[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const isVermifugo = tipo === "vermifugo";
   const labelSing = isVermifugo ? "vermífugo" : "vacina";
@@ -123,13 +125,30 @@ export const VacinasView = ({ tipo }: Props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, tipo]);
 
-  const resetForm = () =>
+  const resetForm = () => {
     setForm({ nome_vacina: "", data_aplicacao: "", proxima_dose: "", observacoes: "" });
+    setEditingId(null);
+  };
+
+  const openCreate = () => {
+    resetForm();
+    setDialogOpen(true);
+  };
+
+  const openEdit = (v: Vacina) => {
+    setEditingId(v.id);
+    setForm({
+      nome_vacina: v.nome_vacina,
+      data_aplicacao: v.data_aplicacao,
+      proxima_dose: v.proxima_dose || "",
+      observacoes: v.observacoes || "",
+    });
+    setDialogOpen(true);
+  };
 
   const handleAplicacaoChange = (value: string) => {
     setForm((prev) => {
       const next = { ...prev, data_aplicacao: value };
-      // Auto-calc próxima dose if user hasn't manually set it (or it equals previous auto value)
       if (value) {
         next.proxima_dose = addToDate(value, monthsToAdd);
       }
@@ -144,17 +163,18 @@ export const VacinasView = ({ tipo }: Props) => {
       return;
     }
     setSaving(true);
-    const { error } = await supabase.from("vacinas").insert({
-      pet_id: id,
+    const payload = {
       nome_vacina: form.nome_vacina.trim(),
       data_aplicacao: form.data_aplicacao,
       proxima_dose: form.proxima_dose || null,
       observacoes: form.observacoes.trim() || null,
-      tipo,
-    });
+    };
+    const { error } = editingId
+      ? await supabase.from("vacinas").update(payload).eq("id", editingId)
+      : await supabase.from("vacinas").insert({ ...payload, pet_id: id, tipo });
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success(`${isVermifugo ? "Vermífugo" : "Vacina"} adicionado 💉`);
+    toast.success(editingId ? "Atualizado ✏️" : `${isVermifugo ? "Vermífugo" : "Vacina"} adicionado 💉`);
     setDialogOpen(false);
     resetForm();
     load();
@@ -183,7 +203,7 @@ export const VacinasView = ({ tipo }: Props) => {
 
       <main className="max-w-2xl mx-auto p-4 space-y-4">
         <Button
-          onClick={() => setDialogOpen(true)}
+          onClick={openCreate}
           className="w-full"
           size="lg"
         >
@@ -220,13 +240,22 @@ export const VacinasView = ({ tipo }: Props) => {
                         {v.nome_vacina}
                       </h3>
                     </div>
-                    <button
-                      onClick={() => handleDelete(v.id)}
-                      className="text-muted-foreground hover:text-destructive p-1"
-                      aria-label="Remover"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => openEdit(v)}
+                        className="text-muted-foreground hover:text-primary p-1"
+                        aria-label="Editar"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(v.id)}
+                        className="text-muted-foreground hover:text-destructive p-1"
+                        aria-label="Remover"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
 
                   <div className="mt-3 space-y-2 text-sm">
@@ -281,7 +310,7 @@ export const VacinasView = ({ tipo }: Props) => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Novo {labelSing}</DialogTitle>
+            <DialogTitle>{editingId ? `Editar ${labelSing}` : `Novo ${labelSing}`}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">

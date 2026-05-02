@@ -83,29 +83,46 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {pet.status_perdido && (
-          <div className="pet-card border-2 border-destructive/30 space-y-3">
-            <h3 className="font-bold text-destructive flex items-center gap-2">
-              <Siren className="w-5 h-5" /> Informações de busca
+        {(pet.ultimo_local || pet.ultimo_horario) && (
+          <div className="pet-card space-y-3">
+            <h3 className="font-bold flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-primary" /> Última leitura da tag
             </h3>
-            {pet.data_perdido && (
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar className="w-4 h-4 text-muted-foreground" />
-                Perdido em {new Date(pet.data_perdido).toLocaleString("pt-BR")}
-              </div>
-            )}
             {pet.ultimo_local && (
-              <div className="flex items-center gap-2 text-sm">
-                <MapPin className="w-4 h-4 text-muted-foreground" />
-                <span className="break-all">{pet.ultimo_local}</span>
+              <div className="flex items-start gap-2 text-sm">
+                <MapPin className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                {pet.ultimo_local.startsWith("http") ? (
+                  <a
+                    href={pet.ultimo_local}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline break-all"
+                  >
+                    Ver no mapa
+                  </a>
+                ) : (
+                  <span className="break-all">{pet.ultimo_local}</span>
+                )}
               </div>
             )}
             {pet.ultimo_horario && (
               <div className="flex items-center gap-2 text-sm">
                 <Clock className="w-4 h-4 text-muted-foreground" />
-                Avistado: {new Date(pet.ultimo_horario).toLocaleString("pt-BR")}
+                {new Date(pet.ultimo_horario).toLocaleString("pt-BR")}
               </div>
             )}
+          </div>
+        )}
+
+        {pet.status_perdido && pet.data_perdido && (
+          <div className="pet-card border-2 border-destructive/30">
+            <h3 className="font-bold text-destructive flex items-center gap-2">
+              <Siren className="w-5 h-5" /> Marcado como perdido
+            </h3>
+            <div className="flex items-center gap-2 text-sm mt-3">
+              <Calendar className="w-4 h-4 text-muted-foreground" />
+              {new Date(pet.data_perdido).toLocaleString("pt-BR")}
+            </div>
           </div>
         )}
 
