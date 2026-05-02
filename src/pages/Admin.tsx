@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { PetHeader } from "@/components/PetHeader";
-import { Loader2, Plus, Copy, ExternalLink, Eye, Trash2 } from "lucide-react";
+import { Loader2, Plus, Copy, ExternalLink, Eye, Trash2, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -28,9 +29,21 @@ const genToken = () =>
   crypto.randomUUID().replace(/-/g, "").slice(0, 24);
 
 const Admin = () => {
+  const navigate = useNavigate();
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+    if (localStorage.getItem("isAdmin") !== "true") {
+      navigate("/admin/login", { replace: true });
+    }
+  }, [navigate]);
+
+  const sair = () => {
+    localStorage.removeItem("isAdmin");
+    navigate("/admin/login", { replace: true });
+  };
 
   const load = async () => {
     setLoading(true);
@@ -102,10 +115,15 @@ const Admin = () => {
       <main className="max-w-5xl mx-auto p-4 space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-bold">Pets cadastrados ({pets.length})</h2>
-          <Button onClick={novoPet} disabled={creating}>
-            {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-            Novo Pet
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={novoPet} disabled={creating}>
+              {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              Novo Pet
+            </Button>
+            <Button variant="outline" onClick={sair} title="Sair">
+              <LogOut className="w-4 h-4" /> Sair
+            </Button>
+          </div>
         </div>
 
         {loading ? (
