@@ -457,7 +457,7 @@ const Saude = () => {
       <Dialog open={medDialog} onOpenChange={setMedDialog}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Novo medicamento</DialogTitle>
+            <DialogTitle>{editingMedId ? "Editar medicamento" : "Novo medicamento"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
             <div className="space-y-1">
