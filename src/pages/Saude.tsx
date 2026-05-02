@@ -149,7 +149,7 @@ const Saude = () => {
     return items;
   }, [meds]);
 
-  const resetMed = () =>
+  const resetMed = () => {
     setMedForm({
       nome_medicamento: "",
       dosagem: "",
@@ -159,9 +159,50 @@ const Saude = () => {
       data_fim: "",
       observacoes: "",
     });
+    setEditingMedId(null);
+  };
 
-  const resetExame = () =>
+  const resetExame = () => {
     setExameForm({ nome_exame: "", data_exame: "", observacoes: "", file: null });
+    setEditingExameId(null);
+    setEditingExameUrl(null);
+  };
+
+  const openCreateMed = () => {
+    resetMed();
+    setMedDialog(true);
+  };
+
+  const openEditMed = (m: Medicamento) => {
+    setEditingMedId(m.id);
+    setMedForm({
+      nome_medicamento: m.nome_medicamento,
+      dosagem: m.dosagem || "",
+      horario: m.horario || "",
+      frequencia: m.frequencia || "",
+      data_inicio: m.data_inicio || "",
+      data_fim: m.data_fim || "",
+      observacoes: m.observacoes || "",
+    });
+    setMedDialog(true);
+  };
+
+  const openCreateExame = () => {
+    resetExame();
+    setExameDialog(true);
+  };
+
+  const openEditExame = (e: Exame) => {
+    setEditingExameId(e.id);
+    setEditingExameUrl(e.arquivo_url);
+    setExameForm({
+      nome_exame: e.nome_exame,
+      data_exame: e.data_exame || "",
+      observacoes: e.observacoes || "",
+      file: null,
+    });
+    setExameDialog(true);
+  };
 
   const handleSaveMed = async () => {
     if (!id) return;
@@ -170,8 +211,7 @@ const Saude = () => {
       return;
     }
     setSaving(true);
-    const { error } = await supabase.from("medicamentos").insert({
-      pet_id: id,
+    const payload = {
       nome_medicamento: medForm.nome_medicamento.trim(),
       dosagem: medForm.dosagem.trim() || null,
       horario: medForm.horario.trim() || null,
@@ -179,10 +219,13 @@ const Saude = () => {
       data_inicio: medForm.data_inicio || null,
       data_fim: medForm.data_fim || null,
       observacoes: medForm.observacoes.trim() || null,
-    });
+    };
+    const { error } = editingMedId
+      ? await supabase.from("medicamentos").update(payload).eq("id", editingMedId)
+      : await supabase.from("medicamentos").insert({ ...payload, pet_id: id });
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success("Medicamento adicionado 💊");
+    toast.success(editingMedId ? "Atualizado ✏️" : "Medicamento adicionado 💊");
     setMedDialog(false);
     resetMed();
     load();
@@ -204,7 +247,7 @@ const Saude = () => {
     }
     setSaving(true);
     try {
-      let arquivo_url: string | null = null;
+      let arquivo_url: string | null = editingExameUrl;
       if (exameForm.file) {
         const ext = exameForm.file.name.split(".").pop();
         const path = `${id}/${Date.now()}.${ext}`;
@@ -215,15 +258,17 @@ const Saude = () => {
         const { data } = supabase.storage.from("pet-exames").getPublicUrl(path);
         arquivo_url = data.publicUrl;
       }
-      const { error } = await supabase.from("exames").insert({
-        pet_id: id,
+      const payload = {
         nome_exame: exameForm.nome_exame.trim(),
         data_exame: exameForm.data_exame || null,
         observacoes: exameForm.observacoes.trim() || null,
         arquivo_url,
-      });
+      };
+      const { error } = editingExameId
+        ? await supabase.from("exames").update(payload).eq("id", editingExameId)
+        : await supabase.from("exames").insert({ ...payload, pet_id: id });
       if (error) throw error;
-      toast.success("Exame salvo 📄");
+      toast.success(editingExameId ? "Exame atualizado ✏️" : "Exame salvo 📄");
       setExameDialog(false);
       resetExame();
       load();
