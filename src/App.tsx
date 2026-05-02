@@ -12,6 +12,7 @@ import Edit from "./pages/Edit.tsx";
 import Vacinas from "./pages/Vacinas.tsx";
 import Vermifugacao from "./pages/Vermifugacao.tsx";
 import Saude from "./pages/Saude.tsx";
+import Admin from "./pages/Admin.tsx";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/vacinas" element={<Vacinas />} />
           <Route path="/vermifugacao" element={<Vermifugacao />} />
           <Route path="/saude" element={<Saude />} />
+          <Route path="/admin" element={<Admin />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
