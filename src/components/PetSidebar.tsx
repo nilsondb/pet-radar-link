@@ -1,4 +1,4 @@
-import { Dog, Pencil, Siren, LogOut, X, Syringe, Bug, HeartPulse } from "lucide-react";
+import { Pencil, Siren, LogOut, X, Syringe, Bug, HeartPulse } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
