@@ -14,6 +14,81 @@ export type Database = {
   }
   public: {
     Tables: {
+      exames: {
+        Row: {
+          arquivo_url: string | null
+          created_at: string
+          data_exame: string | null
+          id: string
+          nome_exame: string
+          observacoes: string | null
+          pet_id: string
+          updated_at: string
+        }
+        Insert: {
+          arquivo_url?: string | null
+          created_at?: string
+          data_exame?: string | null
+          id?: string
+          nome_exame: string
+          observacoes?: string | null
+          pet_id: string
+          updated_at?: string
+        }
+        Update: {
+          arquivo_url?: string | null
+          created_at?: string
+          data_exame?: string | null
+          id?: string
+          nome_exame?: string
+          observacoes?: string | null
+          pet_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      medicamentos: {
+        Row: {
+          created_at: string
+          data_fim: string | null
+          data_inicio: string | null
+          dosagem: string | null
+          frequencia: string | null
+          horario: string | null
+          id: string
+          nome_medicamento: string
+          observacoes: string | null
+          pet_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string | null
+          dosagem?: string | null
+          frequencia?: string | null
+          horario?: string | null
+          id?: string
+          nome_medicamento: string
+          observacoes?: string | null
+          pet_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string | null
+          dosagem?: string | null
+          frequencia?: string | null
+          horario?: string | null
+          id?: string
+          nome_medicamento?: string
+          observacoes?: string | null
+          pet_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pets: {
         Row: {
           ativo: boolean
@@ -25,6 +100,7 @@ export type Database = {
           id: string
           nome_dono: string
           nome_pet: string
+          peso: number | null
           status_perdido: boolean
           telefone: string
           ultimo_horario: string | null
@@ -41,6 +117,7 @@ export type Database = {
           id: string
           nome_dono: string
           nome_pet: string
+          peso?: number | null
           status_perdido?: boolean
           telefone: string
           ultimo_horario?: string | null
@@ -57,6 +134,7 @@ export type Database = {
           id?: string
           nome_dono?: string
           nome_pet?: string
+          peso?: number | null
           status_perdido?: boolean
           telefone?: string
           ultimo_horario?: string | null
@@ -74,6 +152,7 @@ export type Database = {
           observacoes: string | null
           pet_id: string
           proxima_dose: string | null
+          tipo: string
           updated_at: string
         }
         Insert: {
@@ -84,6 +163,7 @@ export type Database = {
           observacoes?: string | null
           pet_id: string
           proxima_dose?: string | null
+          tipo?: string
           updated_at?: string
         }
         Update: {
@@ -94,6 +174,7 @@ export type Database = {
           observacoes?: string | null
           pet_id?: string
           proxima_dose?: string | null
+          tipo?: string
           updated_at?: string
         }
         Relationships: []
