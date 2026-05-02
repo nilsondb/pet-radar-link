@@ -35,7 +35,8 @@ const PetPublic = () => {
     }
     (async () => {
       const { data } = await supabase.from("pets").select("*").eq("id", id).maybeSingle();
-      setPet(data);
+      const visible = data && data.status_ativado ? data : null;
+      setPet(visible);
       setLoading(false);
 
       if (data && navigator.geolocation && podeAtualizar(data.ultimo_horario)) {
