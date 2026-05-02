@@ -33,8 +33,13 @@ const Setup = () => {
       return;
     }
     (async () => {
-      const { data: existing } = await supabase.from("pets").select("id").eq("id", id).maybeSingle();
-      if (existing) {
+      const { data: existing } = await supabase
+        .from("pets")
+        .select("id, status_ativado, token")
+        .eq("id", id)
+        .maybeSingle();
+      // Already activated → go to dashboard
+      if (existing?.status_ativado) {
         const qs = token ? `?id=${id}&token=${token}` : `?id=${id}`;
         navigate(`/dashboard${qs}`, { replace: true });
         return;
@@ -64,15 +69,25 @@ const Setup = () => {
       if (foto) foto_url = await uploadPetPhoto(id, foto);
 
       const { peso, ...rest } = form;
-      const { error } = await supabase.from("pets").insert({
-        id,
+      const payload = {
         ...rest,
         data_nascimento: rest.data_nascimento || null,
         peso: peso ? Number(peso) : null,
         foto_url,
-      });
-      if (error) throw error;
-      // Mark token as used (best-effort)
+        status_ativado: true,
+        ultimo_acesso: new Date().toISOString(),
+      };
+
+      // Check if a placeholder pet already exists (admin pre-created)
+      const { data: existing } = await supabase.from("pets").select("id").eq("id", id).maybeSingle();
+      if (existing) {
+        const { error } = await supabase.from("pets").update(payload).eq("id", id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("pets").insert({ id, token, ...payload });
+        if (error) throw error;
+      }
+
       if (token) {
         await supabase.from("activation_tokens").update({ used: true }).eq("id", id);
       }

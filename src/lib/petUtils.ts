@@ -40,6 +40,14 @@ export function useTokenFromUrl(): string | null {
 }
 
 export async function validateActivationToken(id: string, token: string): Promise<boolean> {
+  // Prefer token stored on the pet row (admin-created)
+  const { data: pet } = await supabase
+    .from("pets")
+    .select("token")
+    .eq("id", id)
+    .maybeSingle();
+  if (pet?.token) return pet.token === token;
+  // Fallback to legacy activation_tokens table
   const { data } = await supabase
     .from("activation_tokens")
     .select("token")

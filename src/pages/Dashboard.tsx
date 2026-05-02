@@ -20,13 +20,15 @@ const Dashboard = () => {
   const load = async () => {
     if (!id) return;
     const { data } = await supabase.from("pets").select("*").eq("id", id).maybeSingle();
-    if (!data) {
+    if (!data || !data.status_ativado) {
       const qs = token ? `?id=${id}&token=${token}` : `?id=${id}`;
       navigate(`/setup${qs}`, { replace: true });
       return;
     }
     setPet(data);
     setLoading(false);
+    // update last access (best-effort)
+    supabase.from("pets").update({ ultimo_acesso: new Date().toISOString() }).eq("id", id).then(() => {});
   };
 
   useEffect(() => {
