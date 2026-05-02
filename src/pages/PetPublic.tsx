@@ -141,16 +141,24 @@ const PetPublic = () => {
               <Phone className="w-5 h-5 mr-2" /> Ligar para o dono
             </Button>
           </a>
-          <Button
-            onClick={enviarLocalizacao}
-            disabled={sendingLoc}
-            size="lg"
-            variant="outline"
-            className="w-full h-14 text-base"
-          >
-            {sendingLoc ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <MapPin className="w-5 h-5 mr-2" />}
-            Enviar minha localização
-          </Button>
+
+          {autoSent && !permissionDenied ? (
+            <div className="flex items-center justify-center gap-2 text-xs text-success bg-success/10 rounded-xl py-2 px-3">
+              <CheckCircle2 className="w-4 h-4" />
+              Localização enviada automaticamente
+            </div>
+          ) : (
+            <Button
+              onClick={enviarLocalizacao}
+              disabled={sendingLoc}
+              size="lg"
+              variant="outline"
+              className="w-full h-14 text-base"
+            >
+              {sendingLoc ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <MapPin className="w-5 h-5 mr-2" />}
+              Enviar minha localização
+            </Button>
+          )}
         </div>
 
         <p className="text-center text-xs text-muted-foreground pt-4">
