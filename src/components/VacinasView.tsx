@@ -124,13 +124,30 @@ export const VacinasView = ({ tipo }: Props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, tipo]);
 
-  const resetForm = () =>
+  const resetForm = () => {
     setForm({ nome_vacina: "", data_aplicacao: "", proxima_dose: "", observacoes: "" });
+    setEditingId(null);
+  };
+
+  const openCreate = () => {
+    resetForm();
+    setDialogOpen(true);
+  };
+
+  const openEdit = (v: Vacina) => {
+    setEditingId(v.id);
+    setForm({
+      nome_vacina: v.nome_vacina,
+      data_aplicacao: v.data_aplicacao,
+      proxima_dose: v.proxima_dose || "",
+      observacoes: v.observacoes || "",
+    });
+    setDialogOpen(true);
+  };
 
   const handleAplicacaoChange = (value: string) => {
     setForm((prev) => {
       const next = { ...prev, data_aplicacao: value };
-      // Auto-calc próxima dose if user hasn't manually set it (or it equals previous auto value)
       if (value) {
         next.proxima_dose = addToDate(value, monthsToAdd);
       }
@@ -145,17 +162,18 @@ export const VacinasView = ({ tipo }: Props) => {
       return;
     }
     setSaving(true);
-    const { error } = await supabase.from("vacinas").insert({
-      pet_id: id,
+    const payload = {
       nome_vacina: form.nome_vacina.trim(),
       data_aplicacao: form.data_aplicacao,
       proxima_dose: form.proxima_dose || null,
       observacoes: form.observacoes.trim() || null,
-      tipo,
-    });
+    };
+    const { error } = editingId
+      ? await supabase.from("vacinas").update(payload).eq("id", editingId)
+      : await supabase.from("vacinas").insert({ ...payload, pet_id: id, tipo });
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success(`${isVermifugo ? "Vermífugo" : "Vacina"} adicionado 💉`);
+    toast.success(editingId ? "Atualizado ✏️" : `${isVermifugo ? "Vermífugo" : "Vacina"} adicionado 💉`);
     setDialogOpen(false);
     resetForm();
     load();
