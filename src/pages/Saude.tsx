@@ -413,13 +413,22 @@ const Saude = () => {
                       <FileText className="w-5 h-5 text-primary shrink-0" />
                       <h3 className="font-bold text-lg leading-tight truncate">{e.nome_exame}</h3>
                     </div>
-                    <button
-                      onClick={() => handleDeleteExame(e.id)}
-                      className="text-muted-foreground hover:text-destructive p-1"
-                      aria-label="Remover"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => openEditExame(e)}
+                        className="text-muted-foreground hover:text-primary p-1"
+                        aria-label="Editar"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteExame(e.id)}
+                        className="text-muted-foreground hover:text-destructive p-1"
+                        aria-label="Remover"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
                     Data: {formatDate(e.data_exame)}
