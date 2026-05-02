@@ -19,6 +19,7 @@ const Setup = () => {
   const [form, setForm] = useState({
     nome_pet: "",
     data_nascimento: "",
+    peso: "",
     nome_dono: "",
     telefone: "",
     endereco: "",
@@ -52,10 +53,12 @@ const Setup = () => {
       let foto_url: string | null = null;
       if (foto) foto_url = await uploadPetPhoto(id, foto);
 
+      const { peso, ...rest } = form;
       const { error } = await supabase.from("pets").insert({
         id,
-        ...form,
-        data_nascimento: form.data_nascimento || null,
+        ...rest,
+        data_nascimento: rest.data_nascimento || null,
+        peso: peso ? Number(peso) : null,
         foto_url,
       });
       if (error) throw error;
@@ -126,6 +129,12 @@ const Setup = () => {
               <Label htmlFor="data_nascimento">Data de nascimento</Label>
               <Input id="data_nascimento" type="date" value={form.data_nascimento}
                 onChange={(e) => setForm({ ...form, data_nascimento: e.target.value })} />
+            </div>
+
+            <div>
+              <Label htmlFor="peso">Peso (kg)</Label>
+              <Input id="peso" type="number" step="0.1" min="0" placeholder="Ex: 8.5" value={form.peso}
+                onChange={(e) => setForm({ ...form, peso: e.target.value })} />
             </div>
 
             <div>

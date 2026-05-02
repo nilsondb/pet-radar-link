@@ -49,6 +49,7 @@ const Edit = () => {
       const { error } = await supabase.from("pets").update({
         nome_pet: pet.nome_pet,
         data_nascimento: pet.data_nascimento || null,
+        peso: pet.peso === "" || pet.peso == null ? null : Number(pet.peso),
         nome_dono: pet.nome_dono,
         telefone: pet.telefone,
         endereco: pet.endereco,
@@ -107,6 +108,10 @@ const Edit = () => {
           <div>
             <Label>Data de nascimento</Label>
             <Input type="date" value={pet.data_nascimento || ""} onChange={(e) => setPet({ ...pet, data_nascimento: e.target.value })} />
+          </div>
+          <div>
+            <Label>Peso (kg)</Label>
+            <Input type="number" step="0.1" min="0" placeholder="Ex: 8.5" value={pet.peso ?? ""} onChange={(e) => setPet({ ...pet, peso: e.target.value })} />
           </div>
           <div>
             <Label>Nome do dono</Label>
