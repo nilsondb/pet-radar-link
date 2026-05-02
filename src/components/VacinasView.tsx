@@ -310,7 +310,7 @@ export const VacinasView = ({ tipo }: Props) => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Novo {labelSing}</DialogTitle>
+            <DialogTitle>{editingId ? `Editar ${labelSing}` : `Novo ${labelSing}`}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
