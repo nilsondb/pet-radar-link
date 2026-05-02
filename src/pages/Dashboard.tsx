@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useIdFromUrl } from "@/lib/petUtils";
+import { useIdFromUrl, useTokenFromUrl } from "@/lib/petUtils";
 import { PetHeader } from "@/components/PetHeader";
 import { PetSidebar } from "@/components/PetSidebar";
 import { Button } from "@/components/ui/button";
