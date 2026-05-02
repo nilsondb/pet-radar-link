@@ -2,14 +2,31 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIdFromUrl, calcularIdade, formatTelefoneWA } from "@/lib/petUtils";
 import { Button } from "@/components/ui/button";
-import { Loader2, PawPrint, Phone, MessageCircle, MapPin, Siren, Heart } from "lucide-react";
+import { Loader2, PawPrint, Phone, MessageCircle, MapPin, Siren, Heart, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+
+const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutos
 
 const PetPublic = () => {
   const id = useIdFromUrl();
   const [pet, setPet] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [sendingLoc, setSendingLoc] = useState(false);
+  const [autoSent, setAutoSent] = useState(false);
+  const [permissionDenied, setPermissionDenied] = useState(false);
+
+  const podeAtualizar = (ultimo: string | null) => {
+    if (!ultimo) return true;
+    return Date.now() - new Date(ultimo).getTime() > COOLDOWN_MS;
+  };
+
+  const salvarLocalizacao = async (petId: string, lat: number, lng: number) => {
+    const local = `https://maps.google.com/?q=${lat},${lng}`;
+    await supabase.from("pets").update({
+      ultimo_local: local,
+      ultimo_horario: new Date().toISOString(),
+    }).eq("id", petId);
+  };
 
   useEffect(() => {
     if (!id) {
@@ -21,18 +38,16 @@ const PetPublic = () => {
       setPet(data);
       setLoading(false);
 
-      // Auto-capture localização (silencioso se negar)
-      if (data && navigator.geolocation) {
+      if (data && navigator.geolocation && podeAtualizar(data.ultimo_horario)) {
         navigator.geolocation.getCurrentPosition(
           async (pos) => {
-            const local = `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
-            await supabase.from("pets").update({
-              ultimo_local: local,
-              ultimo_horario: new Date().toISOString(),
-            }).eq("id", id);
+            await salvarLocalizacao(id, pos.coords.latitude, pos.coords.longitude);
+            setAutoSent(true);
           },
-          () => {},
-          { timeout: 8000 }
+          (err) => {
+            if (err.code === err.PERMISSION_DENIED) setPermissionDenied(true);
+          },
+          { timeout: 10000, enableHighAccuracy: true }
         );
       }
     })();
@@ -40,20 +55,22 @@ const PetPublic = () => {
 
   const enviarLocalizacao = () => {
     if (!navigator.geolocation || !id) return;
+    if (!podeAtualizar(pet?.ultimo_horario)) {
+      toast.info("Localização já enviada recentemente. Aguarde alguns minutos.");
+      return;
+    }
     setSendingLoc(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
-        const local = `https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
-        const { error } = await supabase.from("pets").update({
-          ultimo_local: local,
-          ultimo_horario: new Date().toISOString(),
-        }).eq("id", id);
+        await salvarLocalizacao(id, pos.coords.latitude, pos.coords.longitude);
         setSendingLoc(false);
-        if (error) toast.error(error.message);
-        else toast.success("Localização enviada ao dono! ❤️");
+        setAutoSent(true);
+        setPermissionDenied(false);
+        toast.success("Localização enviada ao dono! ❤️");
       },
       () => {
         setSendingLoc(false);
+        setPermissionDenied(true);
         toast.error("Não foi possível obter sua localização.");
       }
     );
