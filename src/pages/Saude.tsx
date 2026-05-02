@@ -26,6 +26,7 @@ import {
   Upload,
   Clock,
   ExternalLink,
+  Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 
