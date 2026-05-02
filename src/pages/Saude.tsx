@@ -361,13 +361,22 @@ const Saude = () => {
                       <Pill className="w-5 h-5 text-primary shrink-0" />
                       <h3 className="font-bold text-lg leading-tight">{m.nome_medicamento}</h3>
                     </div>
-                    <button
-                      onClick={() => handleDeleteMed(m.id)}
-                      className="text-muted-foreground hover:text-destructive p-1"
-                      aria-label="Remover"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => openEditMed(m)}
+                        className="text-muted-foreground hover:text-primary p-1"
+                        aria-label="Editar"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteMed(m.id)}
+                        className="text-muted-foreground hover:text-destructive p-1"
+                        aria-label="Remover"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                   <div className="mt-2 space-y-1 text-sm text-muted-foreground">
                     {m.dosagem && <p><strong className="text-foreground">Dose:</strong> {m.dosagem}</p>}
