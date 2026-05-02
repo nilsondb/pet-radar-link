@@ -90,6 +90,9 @@ const Saude = () => {
   const [medDialog, setMedDialog] = useState(false);
   const [exameDialog, setExameDialog] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editingMedId, setEditingMedId] = useState<string | null>(null);
+  const [editingExameId, setEditingExameId] = useState<string | null>(null);
+  const [editingExameUrl, setEditingExameUrl] = useState<string | null>(null);
 
   const [medForm, setMedForm] = useState({
     nome_medicamento: "",
