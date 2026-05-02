@@ -33,3 +33,17 @@ export function useIdFromUrl(): string | null {
   const params = new URLSearchParams(window.location.search);
   return params.get("id");
 }
+
+export function useTokenFromUrl(): string | null {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("token");
+}
+
+export async function validateActivationToken(id: string, token: string): Promise<boolean> {
+  const { data } = await supabase
+    .from("activation_tokens")
+    .select("token")
+    .eq("id", id)
+    .maybeSingle();
+  return !!data && data.token === token;
+}

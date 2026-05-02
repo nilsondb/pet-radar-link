@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      activation_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          token: string
+          used: boolean
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          token: string
+          used?: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          token?: string
+          used?: boolean
+        }
+        Relationships: []
+      }
       exames: {
         Row: {
           arquivo_url: string | null
