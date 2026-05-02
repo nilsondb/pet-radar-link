@@ -78,6 +78,7 @@ export const VacinasView = ({ tipo }: Props) => {
   const [vacinas, setVacinas] = useState<Vacina[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const isVermifugo = tipo === "vermifugo";
   const labelSing = isVermifugo ? "vermífugo" : "vacina";
