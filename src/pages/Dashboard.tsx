@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 const Dashboard = () => {
   const id = useIdFromUrl();
+  const token = useTokenFromUrl();
   const navigate = useNavigate();
   const [pet, setPet] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -19,8 +20,12 @@ const Dashboard = () => {
   const load = async () => {
     if (!id) return;
     const { data } = await supabase.from("pets").select("*").eq("id", id).maybeSingle();
-    if (!data) navigate(`/setup?id=${id}`, { replace: true });
-    else setPet(data);
+    if (!data) {
+      const qs = token ? `?id=${id}&token=${token}` : `?id=${id}`;
+      navigate(`/setup${qs}`, { replace: true });
+      return;
+    }
+    setPet(data);
     setLoading(false);
   };
 
