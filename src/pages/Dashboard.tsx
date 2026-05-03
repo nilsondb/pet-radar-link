@@ -90,27 +90,46 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {(pet.ultimo_local || pet.ultimo_horario) && (
+        {(pet.ultima_latitude && pet.ultima_longitude) ? (
+          <div className="pet-card space-y-3">
+            <h3 className="font-bold flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-primary" /> Última localização
+            </h3>
+            <div className="rounded-2xl overflow-hidden border border-border">
+              <iframe
+                title="Mapa"
+                src={`https://maps.google.com/maps?q=${pet.ultima_latitude},${pet.ultima_longitude}&z=16&output=embed`}
+                width="100%"
+                height="240"
+                style={{ border: 0 }}
+                loading="lazy"
+              />
+            </div>
+            {pet.ultima_leitura && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Clock className="w-4 h-4" />
+                {new Date(pet.ultima_leitura).toLocaleString("pt-BR")}
+              </div>
+            )}
+            <a
+              href={`https://maps.google.com/?q=${pet.ultima_latitude},${pet.ultima_longitude}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+            >
+              Abrir no Google Maps
+            </a>
+          </div>
+        ) : (pet.ultimo_local || pet.ultimo_horario) && (
           <div className="pet-card space-y-3">
             <h3 className="font-bold flex items-center gap-2">
               <MapPin className="w-5 h-5 text-primary" /> Última leitura da tag
             </h3>
             {pet.ultimo_local && (
-              <div className="flex items-start gap-2 text-sm">
-                <MapPin className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-                {pet.ultimo_local.startsWith("http") ? (
-                  <a
-                    href={pet.ultimo_local}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline break-all"
-                  >
-                    Ver no mapa
-                  </a>
-                ) : (
-                  <span className="break-all">{pet.ultimo_local}</span>
-                )}
-              </div>
+              <a href={pet.ultimo_local} target="_blank" rel="noopener noreferrer"
+                className="text-primary hover:underline text-sm break-all">
+                Ver no mapa
+              </a>
             )}
             {pet.ultimo_horario && (
               <div className="flex items-center gap-2 text-sm">

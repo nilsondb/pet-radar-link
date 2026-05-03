@@ -22,10 +22,21 @@ const PetPublic = () => {
 
   const salvarLocalizacao = async (petId: string, lat: number, lng: number) => {
     const local = `https://maps.google.com/?q=${lat},${lng}`;
+    const agora = new Date().toISOString();
     await supabase.from("pets").update({
       ultimo_local: local,
-      ultimo_horario: new Date().toISOString(),
+      ultimo_horario: agora,
+      ultima_localizacao: local,
+      ultima_leitura: agora,
+      ultima_latitude: lat,
+      ultima_longitude: lng,
     }).eq("id", petId);
+    await supabase.from("pet_localizacoes").insert({
+      pet_id: petId,
+      latitude: lat,
+      longitude: lng,
+      endereco: local,
+    });
   };
 
   useEffect(() => {
