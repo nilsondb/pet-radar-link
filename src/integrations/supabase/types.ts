@@ -173,6 +173,33 @@ export type Database = {
         }
         Relationships: []
       }
+      pet_localizacoes: {
+        Row: {
+          data_leitura: string
+          endereco: string | null
+          id: string
+          latitude: number
+          longitude: number
+          pet_id: string
+        }
+        Insert: {
+          data_leitura?: string
+          endereco?: string | null
+          id?: string
+          latitude: number
+          longitude: number
+          pet_id: string
+        }
+        Update: {
+          data_leitura?: string
+          endereco?: string | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          pet_id?: string
+        }
+        Relationships: []
+      }
       pets: {
         Row: {
           ativo: boolean
@@ -190,6 +217,10 @@ export type Database = {
           status_perdido: boolean
           telefone: string
           token: string | null
+          ultima_latitude: number | null
+          ultima_leitura: string | null
+          ultima_localizacao: string | null
+          ultima_longitude: number | null
           ultimo_acesso: string | null
           ultimo_horario: string | null
           ultimo_local: string | null
@@ -211,6 +242,10 @@ export type Database = {
           status_perdido?: boolean
           telefone: string
           token?: string | null
+          ultima_latitude?: number | null
+          ultima_leitura?: string | null
+          ultima_localizacao?: string | null
+          ultima_longitude?: number | null
           ultimo_acesso?: string | null
           ultimo_horario?: string | null
           ultimo_local?: string | null
@@ -232,6 +267,10 @@ export type Database = {
           status_perdido?: boolean
           telefone?: string
           token?: string | null
+          ultima_latitude?: number | null
+          ultima_leitura?: string | null
+          ultima_localizacao?: string | null
+          ultima_longitude?: number | null
           ultimo_acesso?: string | null
           ultimo_horario?: string | null
           ultimo_local?: string | null
