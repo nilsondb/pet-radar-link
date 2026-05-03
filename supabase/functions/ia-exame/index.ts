@@ -17,7 +17,9 @@ REGRAS IMPORTANTES:
 - nunca substituir um veterinário
 - usar linguagem simples e clara
 
-Formato da resposta (use markdown com títulos):
+Se receber uma imagem ou PDF, leia o conteúdo do exame e analise.
+
+Formato da resposta (markdown com títulos):
 1. **Explicação simples**
 2. **Possíveis causas**
 3. **Quando se preocupar**
@@ -30,22 +32,56 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { pergunta } = await req.json();
-    if (!pergunta || typeof pergunta !== "string" || pergunta.trim().length === 0) {
-      return new Response(JSON.stringify({ error: "Pergunta inválida" }), {
+    const { pergunta, fileBase64, fileMime } = await req.json();
+
+    const hasText = typeof pergunta === "string" && pergunta.trim().length > 0;
+    const hasFile = typeof fileBase64 === "string" && fileBase64.length > 0 && typeof fileMime === "string";
+
+    if (!hasText && !hasFile) {
+      return new Response(JSON.stringify({ error: "Envie um texto ou arquivo" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    if (pergunta.length > 8000) {
+    if (hasText && pergunta.length > 8000) {
       return new Response(JSON.stringify({ error: "Texto muito longo (máx 8000 caracteres)" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    if (hasFile) {
+      const allowed = ["application/pdf", "image/png", "image/jpeg", "image/jpg", "image/webp"];
+      if (!allowed.includes(fileMime)) {
+        return new Response(JSON.stringify({ error: "Formato não suportado. Use PDF, PNG, JPG ou WEBP." }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      // ~10MB base64 limit
+      if (fileBase64.length > 14_000_000) {
+        return new Response(JSON.stringify({ error: "Arquivo muito grande (máx ~10MB)" }), {
+          status: 413,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
+
+    const userContent: any[] = [];
+    userContent.push({
+      type: "text",
+      text: hasText
+        ? `Pergunta do usuário:\n${pergunta}`
+        : "Analise o exame anexado seguindo o formato solicitado.",
+    });
+    if (hasFile) {
+      userContent.push({
+        type: "image_url",
+        image_url: { url: `data:${fileMime};base64,${fileBase64}` },
+      });
+    }
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -54,10 +90,10 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: `Pergunta do usuário:\n${pergunta}` },
+          { role: "user", content: userContent },
         ],
       }),
     });
