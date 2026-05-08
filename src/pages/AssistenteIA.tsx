@@ -70,6 +70,13 @@ const AssistenteIA = () => {
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       setResposta((data as any).resposta);
+      await logPetEvento(
+        id,
+        "consulta_ia",
+        "🤖 Consulta ao Assistente IA",
+        pergunta ? pergunta.slice(0, 200) : (file ? `Arquivo: ${file.name}` : null),
+        { tem_arquivo: !!file }
+      );
     } catch (e: any) {
       toast.error(e.message || "Erro ao analisar");
     } finally {
