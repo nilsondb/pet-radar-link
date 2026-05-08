@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, PawPrint } from "lucide-react";
 import { toast } from "sonner";
+import { logPetEvento } from "@/lib/petEventos";
 
 const Edit = () => {
   const id = useIdFromUrl();
