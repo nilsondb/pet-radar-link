@@ -272,6 +272,9 @@ const Saude = () => {
         ? await supabase.from("exames").update(payload).eq("id", editingExameId)
         : await supabase.from("exames").insert({ ...payload, pet_id: id });
       if (error) throw error;
+      if (!editingExameId) {
+        await logPetEvento(id, "exame", `📄 Exame: ${payload.nome_exame}`, payload.observacoes, payload);
+      }
       toast.success(editingExameId ? "Exame atualizado ✏️" : "Exame salvo 📄");
       setExameDialog(false);
       resetExame();
