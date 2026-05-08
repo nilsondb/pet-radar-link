@@ -36,6 +36,7 @@ const PetPublic = () => {
       longitude: lng,
       endereco: local,
     });
+    await logPetEvento(petId, "localizacao", "📍 Pet localizado", local, { lat, lng, local });
   };
 
   useEffect(() => {
