@@ -226,6 +226,9 @@ const Saude = () => {
       : await supabase.from("medicamentos").insert({ ...payload, pet_id: id });
     setSaving(false);
     if (error) return toast.error(error.message);
+    if (!editingMedId) {
+      await logPetEvento(id, "medicamento", `💊 ${payload.nome_medicamento}`, payload.dosagem || null, payload);
+    }
     toast.success(editingMedId ? "Atualizado ✏️" : "Medicamento adicionado 💊");
     setMedDialog(false);
     resetMed();
