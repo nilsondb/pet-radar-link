@@ -175,6 +175,15 @@ export const VacinasView = ({ tipo }: Props) => {
       : await supabase.from("vacinas").insert({ ...payload, pet_id: id, tipo });
     setSaving(false);
     if (error) return toast.error(error.message);
+    if (!editingId) {
+      await logPetEvento(
+        id,
+        tipo === "vermifugo" ? "vermifugo" : "vacina",
+        `${tipo === "vermifugo" ? "🪱 Vermífugo" : "💉 Vacina"}: ${payload.nome_vacina}`,
+        `Aplicado em ${formatDate(payload.data_aplicacao)}`,
+        { ...payload }
+      );
+    }
     toast.success(editingId ? "Atualizado ✏️" : `${isVermifugo ? "Vermífugo" : "Vacina"} adicionado 💉`);
     setDialogOpen(false);
     resetForm();
