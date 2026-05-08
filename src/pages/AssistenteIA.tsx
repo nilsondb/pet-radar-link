@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Bot, Loader2, Sparkles, Paperclip, X, FileText, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
+import { logPetEvento } from "@/lib/petEventos";
 
 const MAX_BYTES = 10 * 1024 * 1024;
 
