@@ -29,6 +29,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
+import { logPetEvento } from "@/lib/petEventos";
 
 type Medicamento = {
   id: string;
