@@ -14,6 +14,7 @@ import Vermifugacao from "./pages/Vermifugacao.tsx";
 import Saude from "./pages/Saude.tsx";
 import Localizacoes from "./pages/Localizacoes.tsx";
 import AssistenteIA from "./pages/AssistenteIA.tsx";
+import HistoricoInteligente from "./pages/HistoricoInteligente.tsx";
 import Admin from "./pages/Admin.tsx";
 import AdminLogin from "./pages/AdminLogin.tsx";
 import AdminPets from "./pages/AdminPets.tsx";
