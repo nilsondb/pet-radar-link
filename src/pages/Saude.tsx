@@ -29,6 +29,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
+import { logPetEvento } from "@/lib/petEventos";
 
 type Medicamento = {
   id: string;
@@ -225,6 +226,9 @@ const Saude = () => {
       : await supabase.from("medicamentos").insert({ ...payload, pet_id: id });
     setSaving(false);
     if (error) return toast.error(error.message);
+    if (!editingMedId) {
+      await logPetEvento(id, "medicamento", `💊 ${payload.nome_medicamento}`, payload.dosagem || null, payload);
+    }
     toast.success(editingMedId ? "Atualizado ✏️" : "Medicamento adicionado 💊");
     setMedDialog(false);
     resetMed();
@@ -268,6 +272,9 @@ const Saude = () => {
         ? await supabase.from("exames").update(payload).eq("id", editingExameId)
         : await supabase.from("exames").insert({ ...payload, pet_id: id });
       if (error) throw error;
+      if (!editingExameId) {
+        await logPetEvento(id, "exame", `📄 Exame: ${payload.nome_exame}`, payload.observacoes, payload);
+      }
       toast.success(editingExameId ? "Exame atualizado ✏️" : "Exame salvo 📄");
       setExameDialog(false);
       resetExame();

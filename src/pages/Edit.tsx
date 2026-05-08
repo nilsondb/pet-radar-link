@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, PawPrint } from "lucide-react";
 import { toast } from "sonner";
+import { logPetEvento } from "@/lib/petEventos";
 
 const Edit = () => {
   const id = useIdFromUrl();
@@ -46,16 +47,22 @@ const Edit = () => {
       let foto_url = pet.foto_url;
       if (foto) foto_url = await uploadPetPhoto(id, foto);
 
+      const novoPeso = pet.peso === "" || pet.peso == null ? null : Number(pet.peso);
+      const pesoAntes = pet.peso_original ?? pet.peso;
+
       const { error } = await supabase.from("pets").update({
         nome_pet: pet.nome_pet,
         data_nascimento: pet.data_nascimento || null,
-        peso: pet.peso === "" || pet.peso == null ? null : Number(pet.peso),
+        peso: novoPeso,
         nome_dono: pet.nome_dono,
         telefone: pet.telefone,
         endereco: pet.endereco,
         foto_url,
       }).eq("id", id);
       if (error) throw error;
+      if (novoPeso != null && Number(pesoAntes) !== novoPeso) {
+        await logPetEvento(id, "peso", `⚖️ Peso atualizado: ${novoPeso} kg`, null, { peso: novoPeso });
+      }
       toast.success("Alterações salvas! 💜");
     } catch (err: any) {
       toast.error(err.message);
@@ -72,6 +79,13 @@ const Edit = () => {
     }).eq("id", id);
     if (error) return toast.error(error.message);
     setPet({ ...pet, status_perdido: perdido });
+    await logPetEvento(
+      id,
+      "status_pet",
+      perdido ? "🚨 Pet marcado como perdido" : "✅ Pet encontrado",
+      null,
+      { perdido }
+    );
     toast.success(perdido ? "Marcado como perdido 🚨" : "Pet encontrado ✅");
   };
 

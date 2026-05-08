@@ -14,6 +14,7 @@ import Vermifugacao from "./pages/Vermifugacao.tsx";
 import Saude from "./pages/Saude.tsx";
 import Localizacoes from "./pages/Localizacoes.tsx";
 import AssistenteIA from "./pages/AssistenteIA.tsx";
+import HistoricoInteligente from "./pages/HistoricoInteligente.tsx";
 import Admin from "./pages/Admin.tsx";
 import AdminLogin from "./pages/AdminLogin.tsx";
 import AdminPets from "./pages/AdminPets.tsx";
@@ -41,6 +42,7 @@ const App = () => (
           <Route path="/saude" element={<Saude />} />
           <Route path="/localizacoes" element={<Localizacoes />} />
           <Route path="/assistente-ia" element={<AssistenteIA />} />
+          <Route path="/historico" element={<HistoricoInteligente />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/pets" element={<AdminPets />} />

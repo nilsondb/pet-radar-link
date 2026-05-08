@@ -173,6 +173,36 @@ export type Database = {
         }
         Relationships: []
       }
+      pet_eventos: {
+        Row: {
+          created_at: string
+          dados_json: Json | null
+          descricao: string | null
+          id: string
+          pet_id: string
+          tipo_evento: string
+          titulo: string
+        }
+        Insert: {
+          created_at?: string
+          dados_json?: Json | null
+          descricao?: string | null
+          id?: string
+          pet_id: string
+          tipo_evento: string
+          titulo: string
+        }
+        Update: {
+          created_at?: string
+          dados_json?: Json | null
+          descricao?: string | null
+          id?: string
+          pet_id?: string
+          tipo_evento?: string
+          titulo?: string
+        }
+        Relationships: []
+      }
       pet_localizacoes: {
         Row: {
           data_leitura: string
@@ -197,6 +227,36 @@ export type Database = {
           latitude?: number
           longitude?: number
           pet_id?: string
+        }
+        Relationships: []
+      }
+      pet_resumos_ia: {
+        Row: {
+          alertas: Json | null
+          created_at: string
+          id: string
+          pet_id: string
+          recomendacoes: Json | null
+          resumo: string
+          score_saude: string
+        }
+        Insert: {
+          alertas?: Json | null
+          created_at?: string
+          id?: string
+          pet_id: string
+          recomendacoes?: Json | null
+          resumo: string
+          score_saude?: string
+        }
+        Update: {
+          alertas?: Json | null
+          created_at?: string
+          id?: string
+          pet_id?: string
+          recomendacoes?: Json | null
+          resumo?: string
+          score_saude?: string
         }
         Relationships: []
       }

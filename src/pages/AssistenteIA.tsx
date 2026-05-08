@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Bot, Loader2, Sparkles, Paperclip, X, FileText, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
+import { logPetEvento } from "@/lib/petEventos";
 
 const MAX_BYTES = 10 * 1024 * 1024;
 
@@ -69,6 +70,13 @@ const AssistenteIA = () => {
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       setResposta((data as any).resposta);
+      await logPetEvento(
+        id,
+        "consulta_ia",
+        "🤖 Consulta ao Assistente IA",
+        pergunta ? pergunta.slice(0, 200) : (file ? `Arquivo: ${file.name}` : null),
+        { tem_arquivo: !!file }
+      );
     } catch (e: any) {
       toast.error(e.message || "Erro ao analisar");
     } finally {

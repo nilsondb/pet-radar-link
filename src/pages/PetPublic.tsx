@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIdFromUrl, formatTelefoneWA } from "@/lib/petUtils";
+import { logPetEvento } from "@/lib/petEventos";
 import { Loader2, PawPrint } from "lucide-react";
 
 const COOLDOWN_MS = 5 * 60 * 1000;
@@ -35,6 +36,7 @@ const PetPublic = () => {
       longitude: lng,
       endereco: local,
     });
+    await logPetEvento(petId, "localizacao", "📍 Pet localizado", local, { lat, lng, local });
   };
 
   useEffect(() => {
