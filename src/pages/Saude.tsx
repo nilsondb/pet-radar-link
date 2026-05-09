@@ -71,6 +71,14 @@ function isMedicamentoAtivoHoje(m: Medicamento): boolean {
   return true;
 }
 
+function isMedicamentoFinalizado(m: Medicamento): boolean {
+  if (!m.data_fim) return false;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const fim = new Date(m.data_fim + "T00:00:00");
+  return fim < hoje;
+}
+
 function parseHorarios(h: string | null): string[] {
   if (!h) return [];
   return h
@@ -86,6 +94,7 @@ const Saude = () => {
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [meds, setMeds] = useState<Medicamento[]>([]);
+  const [medFilter, setMedFilter] = useState<"todos" | "ativos" | "finalizados">("todos");
   const [exames, setExames] = useState<Exame[]>([]);
 
   const [medDialog, setMedDialog] = useState(false);
@@ -127,9 +136,38 @@ const Saude = () => {
       supabase.from("medicamentos").select("*").eq("pet_id", id).order("created_at", { ascending: false }),
       supabase.from("exames").select("*").eq("pet_id", id).order("data_exame", { ascending: false }),
     ]);
-    setMeds((m.data as Medicamento[]) || []);
+    const medsData = (m.data as Medicamento[]) || [];
+    setMeds(medsData);
     setExames((e.data as Exame[]) || []);
     setLoading(false);
+
+    // Auto-log finalization events (once per medicamento per pet)
+    try {
+      const finalizados = medsData.filter(isMedicamentoFinalizado);
+      if (finalizados.length) {
+        const { data: evts } = await supabase
+          .from("pet_eventos")
+          .select("dados_json")
+          .eq("pet_id", id)
+          .eq("titulo", "Medicamento finalizado");
+        const jaLogados = new Set(
+          (evts || []).map((ev: any) => ev?.dados_json?.medicamento_id).filter(Boolean)
+        );
+        for (const med of finalizados) {
+          if (!jaLogados.has(med.id)) {
+            await logPetEvento(
+              id,
+              "medicamento",
+              "Medicamento finalizado",
+              `${med.nome_medicamento} finalizou o período de uso`,
+              { medicamento_id: med.id, nome_medicamento: med.nome_medicamento, data_fim: med.data_fim }
+            );
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("auto-log finalizados failed", err);
+    }
   };
 
   useEffect(() => {
@@ -355,50 +393,111 @@ const Saude = () => {
             <Button onClick={openCreateMed} className="w-full" size="lg">
               <Plus className="w-5 h-5 mr-1" /> Adicionar medicamento
             </Button>
+
+            {meds.length > 0 && (
+              <div className="flex gap-2">
+                {([
+                  { v: "todos", label: "Todos" },
+                  { v: "ativos", label: "Em uso" },
+                  { v: "finalizados", label: "Finalizados" },
+                ] as const).map((opt) => (
+                  <button
+                    key={opt.v}
+                    onClick={() => setMedFilter(opt.v)}
+                    className={
+                      "flex-1 px-3 py-2 rounded-full text-sm font-medium border transition-colors " +
+                      (medFilter === opt.v
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-muted-foreground border-border hover:bg-muted")
+                    }
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {meds.length === 0 ? (
               <div className="pet-card flex flex-col items-center text-center py-10">
                 <Pill className="w-12 h-12 text-muted-foreground mb-3" />
                 <p className="text-muted-foreground">Nenhum medicamento cadastrado.</p>
               </div>
             ) : (
-              meds.map((m) => (
-                <div key={m.id} className="pet-card">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <Pill className="w-5 h-5 text-primary shrink-0" />
-                      <h3 className="font-bold text-lg leading-tight">{m.nome_medicamento}</h3>
+              (() => {
+                const filtered = meds.filter((m) => {
+                  if (medFilter === "ativos") return !isMedicamentoFinalizado(m);
+                  if (medFilter === "finalizados") return isMedicamentoFinalizado(m);
+                  return true;
+                });
+                if (filtered.length === 0) {
+                  return (
+                    <div className="pet-card flex flex-col items-center text-center py-8">
+                      <p className="text-muted-foreground text-sm">Nenhum medicamento neste filtro.</p>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => openEditMed(m)}
-                        className="text-muted-foreground hover:text-primary p-1"
-                        aria-label="Editar"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteMed(m.id)}
-                        className="text-muted-foreground hover:text-destructive p-1"
-                        aria-label="Remover"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                  );
+                }
+                return filtered.map((m) => {
+                  const finalizado = isMedicamentoFinalizado(m);
+                  return (
+                    <div key={m.id} className="pet-card">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Pill className={"w-5 h-5 shrink-0 " + (finalizado ? "text-muted-foreground" : "text-primary")} />
+                          <h3 className="font-bold text-lg leading-tight">{m.nome_medicamento}</h3>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => openEditMed(m)}
+                            className="text-muted-foreground hover:text-primary p-1"
+                            aria-label="Editar"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteMed(m.id)}
+                            className="text-muted-foreground hover:text-destructive p-1"
+                            aria-label="Remover"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="mt-2">
+                        <span
+                          className={
+                            "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border " +
+                            (finalizado
+                              ? "bg-muted text-muted-foreground border-border"
+                              : "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/30")
+                          }
+                        >
+                          <span className={"w-2 h-2 rounded-full " + (finalizado ? "bg-muted-foreground" : "bg-green-500")} />
+                          {finalizado ? "Finalizado" : "Em uso"}
+                        </span>
+                      </div>
+
+                      <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                        {m.dosagem && <p><strong className="text-foreground">Dose:</strong> {m.dosagem}</p>}
+                        {m.horario && <p><strong className="text-foreground">Horários:</strong> {m.horario}</p>}
+                        {m.frequencia && <p><strong className="text-foreground">Frequência:</strong> {m.frequencia}</p>}
+                        {(m.data_inicio || m.data_fim) && (
+                          <p>
+                            <strong className="text-foreground">Período:</strong>{" "}
+                            {formatDate(m.data_inicio)} → {formatDate(m.data_fim)}
+                          </p>
+                        )}
+                        {m.observacoes && <p className="italic pt-1">{m.observacoes}</p>}
+                        {finalizado && (
+                          <p className="text-xs font-medium text-muted-foreground pt-1">
+                            ⚠️ Período de uso encerrado
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="mt-2 space-y-1 text-sm text-muted-foreground">
-                    {m.dosagem && <p><strong className="text-foreground">Dose:</strong> {m.dosagem}</p>}
-                    {m.horario && <p><strong className="text-foreground">Horários:</strong> {m.horario}</p>}
-                    {m.frequencia && <p><strong className="text-foreground">Frequência:</strong> {m.frequencia}</p>}
-                    {(m.data_inicio || m.data_fim) && (
-                      <p>
-                        <strong className="text-foreground">Período:</strong>{" "}
-                        {formatDate(m.data_inicio)} → {formatDate(m.data_fim)}
-                      </p>
-                    )}
-                    {m.observacoes && <p className="italic pt-1">{m.observacoes}</p>}
-                  </div>
-                </div>
-              ))
+                  );
+                });
+              })()
             )}
           </TabsContent>
 
