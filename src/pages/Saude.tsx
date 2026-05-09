@@ -71,6 +71,14 @@ function isMedicamentoAtivoHoje(m: Medicamento): boolean {
   return true;
 }
 
+function isMedicamentoFinalizado(m: Medicamento): boolean {
+  if (!m.data_fim) return false;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const fim = new Date(m.data_fim + "T00:00:00");
+  return fim < hoje;
+}
+
 function parseHorarios(h: string | null): string[] {
   if (!h) return [];
   return h
