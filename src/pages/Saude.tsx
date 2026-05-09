@@ -136,9 +136,38 @@ const Saude = () => {
       supabase.from("medicamentos").select("*").eq("pet_id", id).order("created_at", { ascending: false }),
       supabase.from("exames").select("*").eq("pet_id", id).order("data_exame", { ascending: false }),
     ]);
-    setMeds((m.data as Medicamento[]) || []);
+    const medsData = (m.data as Medicamento[]) || [];
+    setMeds(medsData);
     setExames((e.data as Exame[]) || []);
     setLoading(false);
+
+    // Auto-log finalization events (once per medicamento per pet)
+    try {
+      const finalizados = medsData.filter(isMedicamentoFinalizado);
+      if (finalizados.length) {
+        const { data: evts } = await supabase
+          .from("pet_eventos")
+          .select("dados_json")
+          .eq("pet_id", id)
+          .eq("titulo", "Medicamento finalizado");
+        const jaLogados = new Set(
+          (evts || []).map((ev: any) => ev?.dados_json?.medicamento_id).filter(Boolean)
+        );
+        for (const med of finalizados) {
+          if (!jaLogados.has(med.id)) {
+            await logPetEvento(
+              id,
+              "medicamento",
+              "Medicamento finalizado",
+              `${med.nome_medicamento} finalizou o período de uso`,
+              { medicamento_id: med.id, nome_medicamento: med.nome_medicamento, data_fim: med.data_fim }
+            );
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("auto-log finalizados failed", err);
+    }
   };
 
   useEffect(() => {
