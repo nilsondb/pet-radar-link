@@ -94,6 +94,7 @@ const Saude = () => {
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [meds, setMeds] = useState<Medicamento[]>([]);
+  const [medFilter, setMedFilter] = useState<"todos" | "ativos" | "finalizados">("todos");
   const [exames, setExames] = useState<Exame[]>([]);
 
   const [medDialog, setMedDialog] = useState(false);
