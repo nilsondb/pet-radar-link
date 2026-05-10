@@ -5,7 +5,8 @@ import { useIdFromUrl, useTokenFromUrl } from "@/lib/petUtils";
 import { PetHeader } from "@/components/PetHeader";
 import { PetSidebar } from "@/components/PetSidebar";
 import { Button } from "@/components/ui/button";
-import { Loader2, PawPrint, MapPin, Clock, Calendar, ShieldCheck, Siren } from "lucide-react";
+import { Loader2, PawPrint, MapPin, Clock, Calendar, ShieldCheck, Siren, HeartPulse, Syringe, Brain, Bot } from "lucide-react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
 const Dashboard = () => {
