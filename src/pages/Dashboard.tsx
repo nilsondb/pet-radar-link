@@ -166,6 +166,26 @@ const Dashboard = () => {
             </Button>
           )}
         </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { to: `/saude?id=${id}`, label: "Saúde", icon: HeartPulse },
+            { to: `/vacinas?id=${id}`, label: "Vacinas", icon: Syringe },
+            { to: `/historico?id=${id}`, label: "Histórico", icon: Brain },
+            { to: `/assistente-ia?id=${id}`, label: "Assistente IA", icon: Bot },
+          ].map(({ to, label, icon: Icon }) => (
+            <Link
+              key={to}
+              to={to}
+              className="pet-card flex flex-col items-center justify-center gap-2 py-5 hover:bg-accent/40 active:scale-[0.98] transition-all"
+            >
+              <div className="w-12 h-12 rounded-2xl header-gradient flex items-center justify-center text-primary-foreground shadow-md">
+                <Icon className="w-6 h-6" />
+              </div>
+              <span className="text-sm font-semibold">{label}</span>
+            </Link>
+          ))}
+        </div>
       </main>
     </div>
   );
