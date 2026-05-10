@@ -30,6 +30,8 @@ const AdminPets = () => {
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"todos" | "ativos" | "pendentes">("todos");
 
   const load = async () => {
     setLoading(true);
@@ -43,6 +45,14 @@ const AdminPets = () => {
   };
 
   useEffect(() => { load(); }, []);
+
+  const filtered = pets.filter((p) => {
+    if (statusFilter === "ativos" && !p.status_ativado) return false;
+    if (statusFilter === "pendentes" && p.status_ativado) return false;
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (p.nome_pet || "").toLowerCase().includes(q) || p.id.toLowerCase().includes(q);
+  });
 
   const novoPet = async () => {
     setCreating(true);
@@ -93,6 +103,34 @@ const AdminPets = () => {
         </Button>
       </div>
 
+      <div className="flex flex-col sm:flex-row gap-2 mb-4">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar por nome ou ID..."
+          className="flex-1 h-10 rounded-lg border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+        <div className="flex gap-1">
+          {([
+            { v: "todos", label: "Todos" },
+            { v: "ativos", label: "Ativos" },
+            { v: "pendentes", label: "Pendentes" },
+          ] as const).map((o) => (
+            <button
+              key={o.v}
+              onClick={() => setStatusFilter(o.v)}
+              className={`px-3 h-10 rounded-lg text-sm font-medium border transition-colors ${
+                statusFilter === o.v
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {loading ? (
         <div className="flex justify-center p-10"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
       ) : (
@@ -108,8 +146,8 @@ const AdminPets = () => {
               </tr>
             </thead>
             <tbody>
-              {pets.map((p) => (
-                <tr key={p.id} className="border-t">
+              {filtered.map((p) => (
+                <tr key={p.id} className="border-t hover:bg-muted/40">
                   <td className="p-3 font-medium">{p.nome_pet || <span className="text-muted-foreground">Não definido</span>}</td>
                   <td className="p-3 font-mono">{p.id}</td>
                   <td className="p-3">
@@ -142,8 +180,8 @@ const AdminPets = () => {
                   </td>
                 </tr>
               ))}
-              {pets.length === 0 && (
-                <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">Nenhum pet cadastrado.</td></tr>
+              {filtered.length === 0 && (
+                <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">Nenhum pet encontrado.</td></tr>
               )}
             </tbody>
           </table>
