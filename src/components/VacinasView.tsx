@@ -50,7 +50,7 @@ function getStatus(proxima: string | null): StatusVacina {
   const prox = new Date(proxima);
   const diff = Math.ceil((prox.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
   if (diff < 0) return "atrasada";
-  if (diff <= 30) return "proxima";
+  if (diff <= 15) return "proxima";
   return "ok";
 }
 
@@ -78,6 +78,7 @@ export const VacinasView = ({ tipo }: Props) => {
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [vacinas, setVacinas] = useState<Vacina[]>([]);
+  const [filtro, setFiltro] = useState<"todas" | "ok" | "proxima" | "atrasada">("todas");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -229,8 +230,30 @@ export const VacinasView = ({ tipo }: Props) => {
             </p>
           </div>
         ) : (
+          <>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {([
+                { v: "todas", label: "Todas" },
+                { v: "ok", label: "🟢 Em dia" },
+                { v: "proxima", label: "🟡 Próximas" },
+                { v: "atrasada", label: "🔴 Atrasadas" },
+              ] as const).map((opt) => (
+                <button
+                  key={opt.v}
+                  onClick={() => setFiltro(opt.v)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-xs font-medium border whitespace-nowrap transition-colors",
+                    filtro === opt.v
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-card text-muted-foreground border-border hover:bg-muted"
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           <div className="space-y-3">
-            {vacinas.map((v) => {
+            {vacinas.filter((v) => filtro === "todas" || getStatus(v.proxima_dose) === filtro).map((v) => {
               const status = getStatus(v.proxima_dose);
               return (
                 <div
@@ -314,6 +337,7 @@ export const VacinasView = ({ tipo }: Props) => {
               );
             })}
           </div>
+          </>
         )}
       </main>
 
