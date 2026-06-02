@@ -62,23 +62,31 @@ const AdminSaasCenter = () => {
   };
 
   const testar = async () => {
-    if (!settings.integration_token) { toast.error("Informe o token primeiro"); return; }
     setTesting(true);
+    setJsonPreview("");
     try {
-      const r = await fetch(FN_URL, { headers: { Authorization: `Bearer ${settings.integration_token}` } });
-      const data = await r.json();
+      const headers: Record<string, string> = {};
+      if (settings.integration_token) headers.Authorization = `Bearer ${settings.integration_token}`;
+      const r = await fetch(FN_URL, { headers });
+      const text = await r.text();
+      setJsonPreview(text);
       if (!r.ok) {
-        toast.error("Falha: " + (data.error || r.status));
-        await supabase.from("integration_sync_logs").insert({ status: "erro", message: data.error || `HTTP ${r.status}` });
+        toast.error("Falha HTTP " + r.status);
+        await supabase.from("integration_sync_logs").insert({ status: "erro", message: `HTTP ${r.status}` });
       } else {
-        toast.success("Integração funcionando!");
+        toast.success("Endpoint funcionando!");
       }
       load();
     } catch (e: any) {
       toast.error("Erro: " + e.message);
+      setJsonPreview(String(e));
     } finally {
       setTesting(false);
     }
+  };
+
+  const copiarUrl = async () => {
+    try { await navigator.clipboard.writeText(FN_URL); toast.success("URL copiada"); } catch {}
   };
 
   if (loading) return <AdminLayout title="SaaS Center"><div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div></AdminLayout>;
