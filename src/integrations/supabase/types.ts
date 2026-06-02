@@ -65,6 +65,51 @@ export type Database = {
         }
         Relationships: []
       }
+      app_metrics: {
+        Row: {
+          active_users: number
+          annual_revenue: number
+          cancellations_month: number
+          custom_metrics: Json
+          id: string
+          last_update: string
+          monthly_revenue: number
+          new_users_month: number
+          new_users_today: number
+          premium_users: number
+          total_subscriptions: number
+          total_users: number
+        }
+        Insert: {
+          active_users?: number
+          annual_revenue?: number
+          cancellations_month?: number
+          custom_metrics?: Json
+          id?: string
+          last_update?: string
+          monthly_revenue?: number
+          new_users_month?: number
+          new_users_today?: number
+          premium_users?: number
+          total_subscriptions?: number
+          total_users?: number
+        }
+        Update: {
+          active_users?: number
+          annual_revenue?: number
+          cancellations_month?: number
+          custom_metrics?: Json
+          id?: string
+          last_update?: string
+          monthly_revenue?: number
+          new_users_month?: number
+          new_users_today?: number
+          premium_users?: number
+          total_subscriptions?: number
+          total_users?: number
+        }
+        Relationships: []
+      }
       exames: {
         Row: {
           arquivo_url: string | null
@@ -95,6 +140,63 @@ export type Database = {
           observacoes?: string | null
           pet_id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      integration_settings: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          integration_token: string | null
+          last_sync: string | null
+          saas_center_url: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          integration_token?: string | null
+          last_sync?: string | null
+          saas_center_url?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          integration_token?: string | null
+          last_sync?: string | null
+          saas_center_url?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      integration_sync_logs: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          payload: Json | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          payload?: Json | null
+          status: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          payload?: Json | null
+          status?: string
         }
         Relationships: []
       }
@@ -396,6 +498,7 @@ export type Database = {
         Args: { p_id: string; p_senha: string }
         Returns: undefined
       }
+      recalc_app_metrics: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
