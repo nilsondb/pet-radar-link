@@ -29,6 +29,7 @@ const AdminSaasCenter = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [jsonPreview, setJsonPreview] = useState<string>("");
 
   const load = async () => {
     setLoading(true);
@@ -61,23 +62,31 @@ const AdminSaasCenter = () => {
   };
 
   const testar = async () => {
-    if (!settings.integration_token) { toast.error("Informe o token primeiro"); return; }
     setTesting(true);
+    setJsonPreview("");
     try {
-      const r = await fetch(FN_URL, { headers: { Authorization: `Bearer ${settings.integration_token}` } });
-      const data = await r.json();
+      const headers: Record<string, string> = {};
+      if (settings.integration_token) headers.Authorization = `Bearer ${settings.integration_token}`;
+      const r = await fetch(FN_URL, { headers });
+      const text = await r.text();
+      setJsonPreview(text);
       if (!r.ok) {
-        toast.error("Falha: " + (data.error || r.status));
-        await supabase.from("integration_sync_logs").insert({ status: "erro", message: data.error || `HTTP ${r.status}` });
+        toast.error("Falha HTTP " + r.status);
+        await supabase.from("integration_sync_logs").insert({ status: "erro", message: `HTTP ${r.status}` });
       } else {
-        toast.success("Integração funcionando!");
+        toast.success("Endpoint funcionando!");
       }
       load();
     } catch (e: any) {
       toast.error("Erro: " + e.message);
+      setJsonPreview(String(e));
     } finally {
       setTesting(false);
     }
+  };
+
+  const copiarUrl = async () => {
+    try { await navigator.clipboard.writeText(FN_URL); toast.success("URL copiada"); } catch {}
   };
 
   if (loading) return <AdminLayout title="SaaS Center"><div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div></AdminLayout>;
@@ -113,16 +122,27 @@ const AdminSaasCenter = () => {
                 </p>
               </div>
             </div>
-            <div className="bg-muted rounded p-3 text-xs break-all">
-              <strong>Endpoint:</strong> GET {FN_URL}
+            <div className="bg-muted rounded p-3 text-xs space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-semibold">Endpoint público (GET):</span>
+                <Button size="sm" variant="ghost" onClick={copiarUrl} className="h-6 px-2 text-xs">Copiar</Button>
+              </div>
+              <a href={FN_URL} target="_blank" rel="noreferrer" className="block break-all text-primary underline">{FN_URL}</a>
+              <p className="text-muted-foreground">Content-Type: application/json — retorna apenas JSON.</p>
             </div>
             <div className="flex gap-2">
               <Button onClick={save} disabled={saving}>{saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Salvar</Button>
               <Button variant="outline" onClick={testar} disabled={testing}>
                 {testing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-                Testar Integração
+                Testar Endpoint
               </Button>
             </div>
+            {jsonPreview && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Resposta JSON</p>
+                <pre className="bg-muted rounded p-3 text-xs overflow-auto max-h-80">{jsonPreview}</pre>
+              </div>
+            )}
           </CardContent>
         </Card>
 

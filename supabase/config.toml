@@ -1,1 +1,4 @@
 project_id = "ncrcvahwfcpduhxvuyhs"
+
+[functions.saas-center]
+verify_jwt = false
