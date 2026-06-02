@@ -1,21 +1,26 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/AdminLayout";
-import { Dog, CheckCircle2, Circle, DollarSign } from "lucide-react";
+import { Dog, CheckCircle2, Circle, DollarSign, Activity } from "lucide-react";
+
 
 const Admin = () => {
   const [stats, setStats] = useState({ total: 0, ativos: 0, pendentes: 0, receita: 0 });
+  const [saas, setSaas] = useState<any>(null);
 
   useEffect(() => {
     (async () => {
       const { data: pets } = await supabase.from("pets").select("status_ativado");
       const { data: pags } = await supabase.from("pagamentos").select("valor, status");
+      const { data: s } = await supabase.from("integration_settings").select("*").order("updated_at", { ascending: false }).limit(1).maybeSingle();
       const total = pets?.length ?? 0;
       const ativos = pets?.filter((p: any) => p.status_ativado).length ?? 0;
       const receita = (pags || [])
         .filter((p: any) => p.status === "pago")
         .reduce((s: number, p: any) => s + Number(p.valor || 0), 0);
       setStats({ total, ativos, pendentes: total - ativos, receita });
+      setSaas(s);
     })();
   }, []);
 
@@ -43,6 +48,20 @@ const Admin = () => {
           </div>
         ))}
       </div>
+
+      <Link to="/admin/saas-center" className="block mt-6 bg-card border rounded-2xl p-6 hover:shadow-md transition-shadow">
+        <div className="flex items-start gap-4">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center text-white">
+            <Activity className="w-5 h-5" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-bold">SaaS Center</h3>
+            <p className="text-sm text-muted-foreground">
+              Status: <span className="font-medium">{saas?.status || "inativo"}</span> · Última sincronização: {saas?.last_sync ? new Date(saas.last_sync).toLocaleString("pt-BR") : "—"}
+            </p>
+          </div>
+        </div>
+      </Link>
 
       <div className="mt-6 bg-card border rounded-2xl p-6">
         <h3 className="font-bold text-lg mb-1">Bem-vindo ao painel</h3>

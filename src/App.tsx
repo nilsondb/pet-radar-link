@@ -22,6 +22,7 @@ import AdminUsuarios from "./pages/AdminUsuarios.tsx";
 import AdminFinanceiro from "./pages/AdminFinanceiro.tsx";
 import AdminPerfil from "./pages/AdminPerfil.tsx";
 import AdminConfiguracoes from "./pages/AdminConfiguracoes.tsx";
+import AdminSaasCenter from "./pages/AdminSaasCenter.tsx";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ const App = () => (
           <Route path="/admin/financeiro" element={<AdminFinanceiro />} />
           <Route path="/admin/perfil" element={<AdminPerfil />} />
           <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
+          <Route path="/admin/saas-center" element={<AdminSaasCenter />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

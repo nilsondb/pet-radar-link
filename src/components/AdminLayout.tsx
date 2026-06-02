@@ -1,7 +1,7 @@
 import { ReactNode, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { adminLogout, getAdminSession } from "@/lib/adminAuth";
-import { LayoutDashboard, Dog, Users, DollarSign, Settings, LogOut, UserCircle } from "lucide-react";
+import { LayoutDashboard, Dog, Users, DollarSign, Settings, LogOut, UserCircle, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
@@ -9,6 +9,7 @@ const items = [
   { to: "/admin/pets", label: "Pets", icon: Dog },
   { to: "/admin/usuarios", label: "Usuários", icon: Users },
   { to: "/admin/financeiro", label: "Financeiro", icon: DollarSign },
+  { to: "/admin/saas-center", label: "SaaS Center", icon: Activity },
   { to: "/admin/configuracoes", label: "Configurações", icon: Settings },
   { to: "/admin/perfil", label: "Perfil", icon: UserCircle },
 ];
