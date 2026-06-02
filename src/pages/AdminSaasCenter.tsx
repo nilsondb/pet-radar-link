@@ -29,6 +29,7 @@ const AdminSaasCenter = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [jsonPreview, setJsonPreview] = useState<string>("");
 
   const load = async () => {
     setLoading(true);
