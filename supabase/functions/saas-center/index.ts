@@ -4,19 +4,16 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
+  const jsonHeaders = { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8' };
+
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   );
 
   try {
-    // Validar token
-    const auth = req.headers.get('Authorization') || '';
-    const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
-    if (!token) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (req.method !== 'GET') {
+      return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers: jsonHeaders });
     }
 
     const { data: settings } = await supabase
@@ -26,13 +23,15 @@ Deno.serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    if (!settings || !settings.enabled || settings.integration_token !== token) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    // Token opcional: se configurado e habilitado, valida; senão, endpoint público
+    const auth = req.headers.get('Authorization') || '';
+    const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+    if (settings?.enabled && settings?.integration_token) {
+      if (token && token !== settings.integration_token) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: jsonHeaders });
+      }
     }
 
-    // Recalcular e retornar
     await supabase.rpc('recalc_app_metrics');
     const { data: m } = await supabase
       .from('app_metrics')
@@ -41,10 +40,12 @@ Deno.serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    await supabase.from('integration_settings').update({
-      last_sync: new Date().toISOString(),
-      status: 'online',
-    }).eq('id', settings.id);
+    if (settings?.id) {
+      await supabase.from('integration_settings').update({
+        last_sync: new Date().toISOString(),
+        status: settings.enabled ? 'online' : 'inativo',
+      }).eq('id', settings.id);
+    }
 
     await supabase.from('integration_sync_logs').insert({
       status: 'sucesso',
@@ -68,12 +69,10 @@ Deno.serve(async (req) => {
       last_update: m?.last_update ?? new Date().toISOString(),
     };
 
-    return new Response(JSON.stringify(body), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(JSON.stringify(body, null, 2), { headers: jsonHeaders });
   } catch (e) {
     return new Response(JSON.stringify({ error: String(e) }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500, headers: jsonHeaders,
     });
   }
 });
