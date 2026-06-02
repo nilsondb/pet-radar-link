@@ -122,16 +122,27 @@ const AdminSaasCenter = () => {
                 </p>
               </div>
             </div>
-            <div className="bg-muted rounded p-3 text-xs break-all">
-              <strong>Endpoint:</strong> GET {FN_URL}
+            <div className="bg-muted rounded p-3 text-xs space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-semibold">Endpoint público (GET):</span>
+                <Button size="sm" variant="ghost" onClick={copiarUrl} className="h-6 px-2 text-xs">Copiar</Button>
+              </div>
+              <a href={FN_URL} target="_blank" rel="noreferrer" className="block break-all text-primary underline">{FN_URL}</a>
+              <p className="text-muted-foreground">Content-Type: application/json — retorna apenas JSON.</p>
             </div>
             <div className="flex gap-2">
               <Button onClick={save} disabled={saving}>{saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Salvar</Button>
               <Button variant="outline" onClick={testar} disabled={testing}>
                 {testing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-                Testar Integração
+                Testar Endpoint
               </Button>
             </div>
+            {jsonPreview && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Resposta JSON</p>
+                <pre className="bg-muted rounded p-3 text-xs overflow-auto max-h-80">{jsonPreview}</pre>
+              </div>
+            )}
           </CardContent>
         </Card>
 
