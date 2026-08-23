@@ -8,6 +8,7 @@ import NotFound from "./pages/NotFound.tsx";
 import Setup from "./pages/Setup.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import PetPublic from "./pages/PetPublic.tsx";
+import MeusPets from "./pages/MeusPets.tsx";
 import Edit from "./pages/Edit.tsx";
 import Vacinas from "./pages/Vacinas.tsx";
 import Vermifugacao from "./pages/Vermifugacao.tsx";
