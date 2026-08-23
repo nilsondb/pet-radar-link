@@ -153,7 +153,7 @@ const MeusPets = () => {
               </div>
               <Button
                 className="w-full"
-                onClick={() => navigate(`/dashboard${petQuery(p.id, p.token)}`)}
+                onClick={() => navigate(`/dashboard${petQuery(p.id, p.token)}&pet=1`)}
               >
                 Abrir Pet
               </Button>
