@@ -80,10 +80,11 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen">
-      <PetSidebar id={id!} open={menuOpen} onClose={() => setMenuOpen(false)} />
+      <PetSidebar id={id!} token={token} open={menuOpen} onClose={() => setMenuOpen(false)} />
       <PetHeader title="Dashboard" onMenuClick={() => setMenuOpen(true)} />
 
       <main className="max-w-2xl mx-auto p-4 space-y-4">
+        <PetSwitcher petId={id!} token={token} />
         <div className="pet-card flex flex-col items-center text-center">
           {pet.foto_url ? (
             <img src={pet.foto_url} alt={pet.nome_pet}
