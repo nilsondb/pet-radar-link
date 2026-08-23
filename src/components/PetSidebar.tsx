@@ -1,25 +1,28 @@
-import { Pencil, Siren, LogOut, X, Syringe, Bug, HeartPulse, MapPin, Bot, Brain } from "lucide-react";
+import { Pencil, Siren, LogOut, X, Syringe, Bug, HeartPulse, MapPin, Bot, Brain, Home, Dog } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 interface Props {
   id: string;
+  token?: string | null;
   open: boolean;
   onClose: () => void;
 }
 
-export const PetSidebar = ({ id, open, onClose }: Props) => {
+export const PetSidebar = ({ id, token, open, onClose }: Props) => {
   const navigate = useNavigate();
+  const qs = token ? `?id=${id}&token=${token}` : `?id=${id}`;
 
   const items = [
-    { to: `/dashboard?id=${id}`, label: "Status do Pet", icon: Siren },
-    { to: `/edit?id=${id}`, label: "Editar Cadastro", icon: Pencil },
-    { to: `/vacinas?id=${id}`, label: "Vacinação", icon: Syringe },
-    { to: `/vermifugacao?id=${id}`, label: "Vermifugação", icon: Bug },
-    { to: `/saude?id=${id}`, label: "Saúde do Pet", icon: HeartPulse },
-    { to: `/localizacoes?id=${id}`, label: "Localizações", icon: MapPin },
-    { to: `/assistente-ia?id=${id}`, label: "Assistente IA", icon: Bot },
-    { to: `/historico?id=${id}`, label: "Histórico Inteligente", icon: Brain },
+    { to: `/dashboard${qs}`, label: "Dashboard", icon: Home },
+    { to: `/meus-pets${qs}`, label: "Meus Pets", icon: Dog },
+    { to: `/edit${qs}`, label: "Editar Pet", icon: Pencil },
+    { to: `/vacinas${qs}`, label: "Vacinação", icon: Syringe },
+    { to: `/vermifugacao${qs}`, label: "Vermifugação", icon: Bug },
+    { to: `/saude${qs}`, label: "Saúde do Pet", icon: HeartPulse },
+    { to: `/localizacoes${qs}`, label: "Localizações", icon: MapPin },
+    { to: `/historico${qs}`, label: "Histórico Inteligente", icon: Brain },
+    { to: `/assistente-ia${qs}`, label: "Assistente IA", icon: Bot },
   ];
 
   const handleLogout = () => {
@@ -37,7 +40,7 @@ export const PetSidebar = ({ id, open, onClose }: Props) => {
       )}
       <aside
         className={cn(
-          "fixed top-0 left-0 h-full w-72 bg-sidebar z-50 shadow-2xl transform transition-transform duration-300",
+          "fixed top-0 left-0 h-full w-72 bg-sidebar z-50 shadow-2xl transform transition-transform duration-300 overflow-y-auto",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >

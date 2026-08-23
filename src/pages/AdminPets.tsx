@@ -16,6 +16,10 @@ type Pet = {
   token: string | null;
   status_ativado: boolean;
   data_criacao: string;
+  tutor_id: string | null;
+  nome_dono: string | null;
+  telefone: string | null;
+  tutores?: { id: string; nome: string; telefone: string } | null;
 };
 
 const genId = () => {
@@ -37,12 +41,17 @@ const AdminPets = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("pets")
-      .select("id, nome_pet, token, status_ativado, data_criacao")
+      .select("id, nome_pet, token, status_ativado, data_criacao, tutor_id, nome_dono, telefone, tutores(id, nome, telefone)")
       .order("data_criacao", { ascending: false });
     if (error) toast.error(error.message);
-    setPets((data as Pet[]) || []);
+    setPets((data as unknown as Pet[]) || []);
     setLoading(false);
   };
+
+  const tutorNome = (p: Pet) => p.tutores?.nome || p.nome_dono || "";
+  const tutorTel = (p: Pet) => p.tutores?.telefone || p.telefone || "";
+  const petsDoTutor = (p: Pet) =>
+    p.tutor_id ? pets.filter((x) => x.tutor_id === p.tutor_id).length : 1;
 
   useEffect(() => { load(); }, []);
 
@@ -51,7 +60,12 @@ const AdminPets = () => {
     if (statusFilter === "pendentes" && p.status_ativado) return false;
     if (!search.trim()) return true;
     const q = search.toLowerCase();
-    return (p.nome_pet || "").toLowerCase().includes(q) || p.id.toLowerCase().includes(q);
+    return (
+      (p.nome_pet || "").toLowerCase().includes(q) ||
+      p.id.toLowerCase().includes(q) ||
+      tutorNome(p).toLowerCase().includes(q) ||
+      tutorTel(p).replace(/\D/g, "").includes(q.replace(/\D/g, "") || "\u0000")
+    );
   });
 
   const novoPet = async () => {
@@ -139,7 +153,8 @@ const AdminPets = () => {
             <thead className="bg-muted">
               <tr className="text-left">
                 <th className="p-3">Nome</th>
-                <th className="p-3">ID</th>
+                <th className="p-3">Tutor</th>
+                <th className="p-3">ID / Tag</th>
                 <th className="p-3">Status</th>
                 <th className="p-3">Criado</th>
                 <th className="p-3 text-right">Ações</th>
@@ -149,6 +164,19 @@ const AdminPets = () => {
               {filtered.map((p) => (
                 <tr key={p.id} className="border-t hover:bg-muted/40">
                   <td className="p-3 font-medium">{p.nome_pet || <span className="text-muted-foreground">Não definido</span>}</td>
+                  <td className="p-3">
+                    {tutorNome(p) ? (
+                      <div>
+                        <div className="font-medium">{tutorNome(p)}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {tutorTel(p)}
+                          {petsDoTutor(p) > 1 && ` · ${petsDoTutor(p)} pets`}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </td>
                   <td className="p-3 font-mono">{p.id}</td>
                   <td className="p-3">
                     <span className={`px-2 py-0.5 rounded-full text-xs ${p.status_ativado ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>
@@ -181,7 +209,7 @@ const AdminPets = () => {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">Nenhum pet encontrado.</td></tr>
+                <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Nenhum pet encontrado.</td></tr>
               )}
             </tbody>
           </table>

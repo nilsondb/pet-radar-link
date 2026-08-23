@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useIdFromUrl, useTokenFromUrl, uploadPetPhoto, validateActivationToken } from "@/lib/petUtils";
+import { ensureTutor, fetchTutor } from "@/lib/tutorUtils";
 import { PetHeader } from "@/components/PetHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import { Loader2, PawPrint, ShieldAlert } from "lucide-react";
 const Setup = () => {
   const id = useIdFromUrl();
   const token = useTokenFromUrl();
+  const tutorParam = new URLSearchParams(window.location.search).get("tutor");
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
   const [tokenValid, setTokenValid] = useState(false);
@@ -51,8 +53,21 @@ const Setup = () => {
       }
       const valid = await validateActivationToken(id, token);
       setTokenValid(valid);
+      // Novo pet de um tutor existente → pré-preencher os dados do tutor
+      if (valid && tutorParam) {
+        const tutor = await fetchTutor(tutorParam);
+        if (tutor) {
+          setForm((f) => ({
+            ...f,
+            nome_dono: tutor.nome,
+            telefone: tutor.telefone,
+            endereco: tutor.endereco || "",
+          }));
+        }
+      }
       setChecking(false);
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, token, navigate]);
 
   const handleFile = (f: File | null) => {
@@ -69,12 +84,24 @@ const Setup = () => {
       if (foto) foto_url = await uploadPetPhoto(id, foto);
 
       const { peso, ...rest } = form;
+
+      // Vincula o pet a um tutor (reaproveita o tutor existente pelo telefone)
+      const tutor_id =
+        tutorParam ||
+        (await ensureTutor({
+          nome: rest.nome_dono,
+          telefone: rest.telefone,
+          endereco: rest.endereco,
+        }));
+
       const payload = {
         ...rest,
         data_nascimento: rest.data_nascimento || null,
         peso: peso ? Number(peso) : null,
         foto_url,
         status_ativado: true,
+        tutor_id,
+        tag_id: id,
         ultimo_acesso: new Date().toISOString(),
       };
 
@@ -92,7 +119,7 @@ const Setup = () => {
         await supabase.from("activation_tokens").update({ used: true }).eq("id", id);
       }
       toast.success("Pet cadastrado com sucesso! 🐾");
-      navigate(`/dashboard?id=${id}${token ? `&token=${token}` : ""}`);
+      navigate(`/dashboard?id=${id}${token ? `&token=${token}` : ""}&pet=1`);
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar");
     } finally {

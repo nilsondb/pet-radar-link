@@ -365,6 +365,7 @@ export type Database = {
       pets: {
         Row: {
           ativo: boolean
+          cor: string | null
           created_at: string
           data_criacao: string
           data_nascimento: string | null
@@ -375,10 +376,14 @@ export type Database = {
           nome_dono: string
           nome_pet: string
           peso: number | null
+          raca: string | null
+          sexo: string | null
           status_ativado: boolean
           status_perdido: boolean
+          tag_id: string | null
           telefone: string
           token: string | null
+          tutor_id: string | null
           ultima_latitude: number | null
           ultima_leitura: string | null
           ultima_localizacao: string | null
@@ -390,6 +395,7 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          cor?: string | null
           created_at?: string
           data_criacao?: string
           data_nascimento?: string | null
@@ -400,10 +406,14 @@ export type Database = {
           nome_dono: string
           nome_pet: string
           peso?: number | null
+          raca?: string | null
+          sexo?: string | null
           status_ativado?: boolean
           status_perdido?: boolean
+          tag_id?: string | null
           telefone: string
           token?: string | null
+          tutor_id?: string | null
           ultima_latitude?: number | null
           ultima_leitura?: string | null
           ultima_localizacao?: string | null
@@ -415,6 +425,7 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          cor?: string | null
           created_at?: string
           data_criacao?: string
           data_nascimento?: string | null
@@ -425,10 +436,14 @@ export type Database = {
           nome_dono?: string
           nome_pet?: string
           peso?: number | null
+          raca?: string | null
+          sexo?: string | null
           status_ativado?: boolean
           status_perdido?: boolean
+          tag_id?: string | null
           telefone?: string
           token?: string | null
+          tutor_id?: string | null
           ultima_latitude?: number | null
           ultima_leitura?: string | null
           ultima_localizacao?: string | null
@@ -436,6 +451,44 @@ export type Database = {
           ultimo_acesso?: string | null
           ultimo_horario?: string | null
           ultimo_local?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pets_tutor_id_fkey"
+            columns: ["tutor_id"]
+            isOneToOne: false
+            referencedRelation: "tutores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tutores: {
+        Row: {
+          created_at: string
+          email: string | null
+          endereco: string | null
+          id: string
+          nome: string
+          telefone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome: string
+          telefone: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome?: string
+          telefone?: string
           updated_at?: string
         }
         Relationships: []
