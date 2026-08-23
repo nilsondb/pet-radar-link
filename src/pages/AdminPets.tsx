@@ -16,6 +16,10 @@ type Pet = {
   token: string | null;
   status_ativado: boolean;
   data_criacao: string;
+  tutor_id: string | null;
+  nome_dono: string | null;
+  telefone: string | null;
+  tutores?: { id: string; nome: string; telefone: string } | null;
 };
 
 const genId = () => {
@@ -37,12 +41,17 @@ const AdminPets = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("pets")
-      .select("id, nome_pet, token, status_ativado, data_criacao")
+      .select("id, nome_pet, token, status_ativado, data_criacao, tutor_id, nome_dono, telefone, tutores(id, nome, telefone)")
       .order("data_criacao", { ascending: false });
     if (error) toast.error(error.message);
-    setPets((data as Pet[]) || []);
+    setPets((data as unknown as Pet[]) || []);
     setLoading(false);
   };
+
+  const tutorNome = (p: Pet) => p.tutores?.nome || p.nome_dono || "";
+  const tutorTel = (p: Pet) => p.tutores?.telefone || p.telefone || "";
+  const petsDoTutor = (p: Pet) =>
+    p.tutor_id ? pets.filter((x) => x.tutor_id === p.tutor_id).length : 1;
 
   useEffect(() => { load(); }, []);
 
