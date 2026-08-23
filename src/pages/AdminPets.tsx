@@ -209,7 +209,7 @@ const AdminPets = () => {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">Nenhum pet encontrado.</td></tr>
+                <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Nenhum pet encontrado.</td></tr>
               )}
             </tbody>
           </table>
