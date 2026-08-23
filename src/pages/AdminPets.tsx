@@ -60,7 +60,12 @@ const AdminPets = () => {
     if (statusFilter === "pendentes" && p.status_ativado) return false;
     if (!search.trim()) return true;
     const q = search.toLowerCase();
-    return (p.nome_pet || "").toLowerCase().includes(q) || p.id.toLowerCase().includes(q);
+    return (
+      (p.nome_pet || "").toLowerCase().includes(q) ||
+      p.id.toLowerCase().includes(q) ||
+      tutorNome(p).toLowerCase().includes(q) ||
+      tutorTel(p).replace(/\D/g, "").includes(q.replace(/\D/g, "") || "\u0000")
+    );
   });
 
   const novoPet = async () => {
