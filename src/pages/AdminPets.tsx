@@ -153,7 +153,8 @@ const AdminPets = () => {
             <thead className="bg-muted">
               <tr className="text-left">
                 <th className="p-3">Nome</th>
-                <th className="p-3">ID</th>
+                <th className="p-3">Tutor</th>
+                <th className="p-3">ID / Tag</th>
                 <th className="p-3">Status</th>
                 <th className="p-3">Criado</th>
                 <th className="p-3 text-right">Ações</th>
@@ -163,6 +164,19 @@ const AdminPets = () => {
               {filtered.map((p) => (
                 <tr key={p.id} className="border-t hover:bg-muted/40">
                   <td className="p-3 font-medium">{p.nome_pet || <span className="text-muted-foreground">Não definido</span>}</td>
+                  <td className="p-3">
+                    {tutorNome(p) ? (
+                      <div>
+                        <div className="font-medium">{tutorNome(p)}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {tutorTel(p)}
+                          {petsDoTutor(p) > 1 && ` · ${petsDoTutor(p)} pets`}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </td>
                   <td className="p-3 font-mono">{p.id}</td>
                   <td className="p-3">
                     <span className={`px-2 py-0.5 rounded-full text-xs ${p.status_ativado ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>
