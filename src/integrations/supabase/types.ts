@@ -44,6 +44,7 @@ export type Database = {
           nome: string | null
           senha_hash: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           ativo?: boolean
@@ -53,6 +54,7 @@ export type Database = {
           nome?: string | null
           senha_hash: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           ativo?: boolean
@@ -62,6 +64,7 @@ export type Database = {
           nome?: string | null
           senha_hash?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -754,6 +757,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       vacinas: {
         Row: {
           created_at: string
@@ -818,6 +842,7 @@ export type Database = {
           id: string
           nome: string
           senha_hash: string | null
+          status_profissional: string
           telefone: string | null
           uf_crmv: string | null
           updated_at: string
@@ -833,6 +858,7 @@ export type Database = {
           id?: string
           nome: string
           senha_hash?: string | null
+          status_profissional?: string
           telefone?: string | null
           uf_crmv?: string | null
           updated_at?: string
@@ -848,6 +874,7 @@ export type Database = {
           id?: string
           nome?: string
           senha_hash?: string | null
+          status_profissional?: string
           telefone?: string | null
           uf_crmv?: string | null
           updated_at?: string
@@ -877,10 +904,91 @@ export type Database = {
         Args: { p_id: string; p_senha: string }
         Returns: undefined
       }
+      ativar_pet_com_token: {
+        Args: {
+          p_data_nascimento?: string
+          p_endereco?: string
+          p_foto_url?: string
+          p_id: string
+          p_nome_dono: string
+          p_nome_pet: string
+          p_peso?: number
+          p_telefone: string
+          p_token: string
+        }
+        Returns: string
+      }
+      criar_perfil_veterinario: {
+        Args: {
+          p_clinica?: string
+          p_crmv?: string
+          p_email: string
+          p_especialidade?: string
+          p_nome: string
+          p_telefone?: string
+          p_uf_crmv?: string
+        }
+        Returns: string
+      }
+      e_meu_pet: { Args: { p_pet_id: string }; Returns: boolean }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: never; Returns: boolean }
+      meu_tutor_id: { Args: never; Returns: string }
+      meu_vet_id: { Args: never; Returns: string }
+      pet_publico: {
+        Args: { p_id: string }
+        Returns: {
+          cor: string
+          especie: string
+          foto_url: string
+          id: string
+          nome_dono: string
+          nome_pet: string
+          raca: string
+          sexo: string
+          status_perdido: boolean
+          telefone: string
+          ultima_latitude: number
+          ultima_longitude: number
+          ultimo_horario: string
+        }[]
+      }
+      pet_status_ativacao: {
+        Args: { p_id: string }
+        Returns: {
+          ativado: boolean
+          existe: boolean
+        }[]
+      }
+      pode_ver_clinico: { Args: { p_pet_id: string }; Returns: boolean }
       recalc_app_metrics: { Args: never; Returns: undefined }
+      registrar_leitura_publica: {
+        Args: {
+          p_endereco?: string
+          p_id: string
+          p_lat: number
+          p_lng: number
+        }
+        Returns: boolean
+      }
+      reivindicar_admin: {
+        Args: { p_email: string; p_senha: string }
+        Returns: boolean
+      }
+      reivindicar_pet: {
+        Args: { p_id: string; p_token: string }
+        Returns: boolean
+      }
+      vet_tem_acesso: { Args: { p_pet_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "tutor" | "veterinarian" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1007,6 +1115,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["tutor", "veterinarian", "admin"],
+    },
   },
 } as const
