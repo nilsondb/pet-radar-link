@@ -33,7 +33,7 @@ const AdminLogin = () => {
     <div className="min-h-screen flex items-center justify-center bg-secondary p-4">
       <form onSubmit={onSubmit} className="w-full max-w-sm bg-card rounded-2xl shadow-lg p-6 space-y-4 border">
         <div className="text-center space-y-1">
-          <h1 className="text-2xl font-bold text-primary">Pet_ID 🐾</h1>
+          <h1 className="text-2xl font-bold text-primary">Authera Pet 🐾</h1>
           <p className="text-sm text-muted-foreground">Área administrativa</p>
         </div>
         <div className="space-y-2">
