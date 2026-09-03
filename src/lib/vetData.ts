@@ -76,7 +76,7 @@ export async function solicitarAcesso(petId: string, vetId: string, access_level
 }
 
 export async function atualizarVinculo(id: string, status: VinculoStatus) {
-  const patch: Record<string, any> = { status };
+  const patch: { status: string; authorized_at?: string; revoked_at?: string } = { status };
   if (status === "active") patch.authorized_at = new Date().toISOString();
   if (status === "revoked") patch.revoked_at = new Date().toISOString();
   const { error } = await supabase.from("pet_veterinarians").update(patch).eq("id", id);
