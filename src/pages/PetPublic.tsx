@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIdFromUrl, formatTelefoneWA } from "@/lib/petUtils";
-import { logPetEvento } from "@/lib/petEventos";
 import { Loader2, PawPrint, MapPin, Phone, MessageCircle, Heart, AlertTriangle, CheckCircle2, User } from "lucide-react";
-
-const COOLDOWN_MS = 5 * 60 * 1000;
 
 const PetPublic = () => {
   const id = useIdFromUrl();
@@ -14,29 +11,15 @@ const PetPublic = () => {
   const [statusKind, setStatusKind] = useState<"loading" | "ok" | "error">("loading");
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
 
-  const podeAtualizar = (ultimo: string | null) => {
-    if (!ultimo) return true;
-    return Date.now() - new Date(ultimo).getTime() > COOLDOWN_MS;
-  };
-
+  // A leitura pública usa apenas funções controladas no servidor (sem acesso direto às tabelas)
   const salvarLocalizacao = async (petId: string, lat: number, lng: number) => {
     const local = `https://maps.google.com/?q=${lat},${lng}`;
-    const agora = new Date().toISOString();
-    await supabase.from("pets").update({
-      ultimo_local: local,
-      ultimo_horario: agora,
-      ultima_localizacao: local,
-      ultima_leitura: agora,
-      ultima_latitude: lat,
-      ultima_longitude: lng,
-    }).eq("id", petId);
-    await supabase.from("pet_localizacoes").insert({
-      pet_id: petId,
-      latitude: lat,
-      longitude: lng,
-      endereco: local,
+    await supabase.rpc("registrar_leitura_publica", {
+      p_id: petId,
+      p_lat: lat,
+      p_lng: lng,
+      p_endereco: local,
     });
-    await logPetEvento(petId, "localizacao", "📍 Pet localizado", local, { lat, lng, local });
   };
 
   useEffect(() => {
@@ -45,8 +28,8 @@ const PetPublic = () => {
       return;
     }
     (async () => {
-      const { data } = await supabase.from("pets").select("*").eq("id", id).maybeSingle();
-      const visible = data && data.status_ativado ? data : null;
+      const { data } = await supabase.rpc("pet_publico", { p_id: id });
+      const visible = Array.isArray(data) ? data[0] ?? null : data ?? null;
       setPet(visible);
       setLoading(false);
 
@@ -58,9 +41,8 @@ const PetPublic = () => {
             setCoords({ lat, lng });
             setStatusLocal("Localização enviada com sucesso!");
             setStatusKind("ok");
-            if (podeAtualizar(visible.ultimo_horario)) {
-              await salvarLocalizacao(id, lat, lng);
-            }
+            // O intervalo mínimo entre leituras é aplicado no servidor
+            await salvarLocalizacao(id, lat, lng);
           },
           () => {
             setStatusLocal("Não foi possível obter localização");
@@ -71,6 +53,7 @@ const PetPublic = () => {
       }
     })();
   }, [id]);
+
 
   if (loading) {
     return (
