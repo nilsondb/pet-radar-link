@@ -291,15 +291,10 @@ const Saude = () => {
     try {
       let arquivo_url: string | null = editingExameUrl;
       if (exameForm.file) {
-        const ext = exameForm.file.name.split(".").pop();
-        const path = `${id}/${Date.now()}.${ext}`;
-        const { error: upErr } = await supabase.storage
-          .from("pet-exames")
-          .upload(path, exameForm.file, { upsert: true });
-        if (upErr) throw upErr;
-        const { data } = supabase.storage.from("pet-exames").getPublicUrl(path);
-        arquivo_url = data.publicUrl;
+        // Bucket privado: guardamos apenas o caminho interno do arquivo
+        arquivo_url = await uploadExame(id, exameForm.file);
       }
+
       const payload = {
         nome_exame: exameForm.nome_exame.trim(),
         data_exame: exameForm.data_exame || null,
