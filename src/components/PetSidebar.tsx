@@ -21,6 +21,7 @@ export const PetSidebar = ({ id, token, open, onClose }: Props) => {
     { to: `/vermifugacao${qs}`, label: "Vermifugação", icon: Bug },
     { to: `/saude${qs}`, label: "Saúde do Pet", icon: HeartPulse },
     { to: `/localizacoes${qs}`, label: "Localizações", icon: MapPin },
+    { to: `/veterinarios${qs}`, label: "Veterinários", icon: Stethoscope },
     { to: `/historico${qs}`, label: "Histórico Inteligente", icon: Brain },
     { to: `/assistente-ia${qs}`, label: "Assistente IA", icon: Bot },
   ];
