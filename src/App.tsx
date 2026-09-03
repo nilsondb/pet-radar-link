@@ -24,6 +24,15 @@ import AdminFinanceiro from "./pages/AdminFinanceiro.tsx";
 import AdminPerfil from "./pages/AdminPerfil.tsx";
 import AdminConfiguracoes from "./pages/AdminConfiguracoes.tsx";
 import AdminSaasCenter from "./pages/AdminSaasCenter.tsx";
+import Veterinarios from "./pages/Veterinarios.tsx";
+import VetLogin from "./pages/vet/VetLogin.tsx";
+import VetDashboard from "./pages/vet/VetDashboard.tsx";
+import VetPacientes from "./pages/vet/VetPacientes.tsx";
+import VetProntuario from "./pages/vet/VetProntuario.tsx";
+import VetAtendimentos from "./pages/vet/VetAtendimentos.tsx";
+import VetExames from "./pages/vet/VetExames.tsx";
+import VetVacinacao from "./pages/vet/VetVacinacao.tsx";
+import VetPerfil from "./pages/vet/VetPerfil.tsx";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +55,15 @@ const App = () => (
           <Route path="/localizacoes" element={<Localizacoes />} />
           <Route path="/assistente-ia" element={<AssistenteIA />} />
           <Route path="/historico" element={<HistoricoInteligente />} />
+          <Route path="/veterinarios" element={<Veterinarios />} />
+          <Route path="/vet/login" element={<VetLogin />} />
+          <Route path="/vet" element={<VetDashboard />} />
+          <Route path="/vet/pacientes" element={<VetPacientes />} />
+          <Route path="/vet/prontuario/:petId" element={<VetProntuario />} />
+          <Route path="/vet/atendimentos" element={<VetAtendimentos />} />
+          <Route path="/vet/exames" element={<VetExames />} />
+          <Route path="/vet/vacinacao" element={<VetVacinacao />} />
+          <Route path="/vet/perfil" element={<VetPerfil />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/pets" element={<AdminPets />} />
