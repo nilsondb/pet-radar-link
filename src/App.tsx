@@ -24,6 +24,15 @@ import AdminFinanceiro from "./pages/AdminFinanceiro.tsx";
 import AdminPerfil from "./pages/AdminPerfil.tsx";
 import AdminConfiguracoes from "./pages/AdminConfiguracoes.tsx";
 import AdminSaasCenter from "./pages/AdminSaasCenter.tsx";
+import Veterinarios from "./pages/Veterinarios.tsx";
+import VetLogin from "./pages/vet/VetLogin.tsx";
+import VetDashboard from "./pages/vet/VetDashboard.tsx";
+import VetPacientes from "./pages/vet/VetPacientes.tsx";
+import VetProntuario from "./pages/vet/VetProntuario.tsx";
+import VetAtendimentos from "./pages/vet/VetAtendimentos.tsx";
+import VetExames from "./pages/vet/VetExames.tsx";
+import VetVacinacao from "./pages/vet/VetVacinacao.tsx";
+import VetPerfil from "./pages/vet/VetPerfil.tsx";
 
 const queryClient = new QueryClient();
 
