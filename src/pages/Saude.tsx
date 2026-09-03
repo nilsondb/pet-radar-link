@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useIdFromUrl } from "@/lib/petUtils";
+import { abrirExame, uploadExame } from "@/lib/exames";
 import { PetHeader } from "@/components/PetHeader";
 import { PetSidebar } from "@/components/PetSidebar";
 import { Button } from "@/components/ui/button";
@@ -291,15 +292,10 @@ const Saude = () => {
     try {
       let arquivo_url: string | null = editingExameUrl;
       if (exameForm.file) {
-        const ext = exameForm.file.name.split(".").pop();
-        const path = `${id}/${Date.now()}.${ext}`;
-        const { error: upErr } = await supabase.storage
-          .from("pet-exames")
-          .upload(path, exameForm.file, { upsert: true });
-        if (upErr) throw upErr;
-        const { data } = supabase.storage.from("pet-exames").getPublicUrl(path);
-        arquivo_url = data.publicUrl;
+        // Bucket privado: guardamos apenas o caminho interno do arquivo
+        arquivo_url = await uploadExame(id, exameForm.file);
       }
+
       const payload = {
         nome_exame: exameForm.nome_exame.trim(),
         data_exame: exameForm.data_exame || null,
@@ -543,14 +539,15 @@ const Saude = () => {
                     <p className="text-sm italic text-muted-foreground mt-1">{e.observacoes}</p>
                   )}
                   {e.arquivo_url && (
-                    <a
-                      href={e.arquivo_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
+                      onClick={() =>
+                        abrirExame(e.arquivo_url).catch(() => toast.error("Não foi possível abrir o arquivo"))
+                      }
                       className="inline-flex items-center gap-1.5 mt-3 text-primary hover:underline text-sm font-medium"
                     >
                       <ExternalLink className="w-4 h-4" /> Abrir arquivo
-                    </a>
+                    </button>
                   )}
                 </div>
               ))

@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { TutorGate } from "@/components/TutorGate";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Setup from "./pages/Setup.tsx";
@@ -44,18 +45,20 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/setup" element={<Setup />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/meus-pets" element={<MeusPets />} />
           <Route path="/pet" element={<PetPublic />} />
-          <Route path="/edit" element={<Edit />} />
-          <Route path="/vacinas" element={<Vacinas />} />
-          <Route path="/vermifugacao" element={<Vermifugacao />} />
-          <Route path="/saude" element={<Saude />} />
-          <Route path="/localizacoes" element={<Localizacoes />} />
-          <Route path="/assistente-ia" element={<AssistenteIA />} />
-          <Route path="/historico" element={<HistoricoInteligente />} />
-          <Route path="/veterinarios" element={<Veterinarios />} />
+          {/* Áreas do tutor: exigem sessão autenticada (Supabase Auth) + RLS no banco */}
+          <Route path="/setup" element={<TutorGate><Setup /></TutorGate>} />
+          <Route path="/dashboard" element={<TutorGate><Dashboard /></TutorGate>} />
+          <Route path="/meus-pets" element={<TutorGate><MeusPets /></TutorGate>} />
+          <Route path="/edit" element={<TutorGate><Edit /></TutorGate>} />
+          <Route path="/vacinas" element={<TutorGate><Vacinas /></TutorGate>} />
+          <Route path="/vermifugacao" element={<TutorGate><Vermifugacao /></TutorGate>} />
+          <Route path="/saude" element={<TutorGate><Saude /></TutorGate>} />
+          <Route path="/localizacoes" element={<TutorGate><Localizacoes /></TutorGate>} />
+          <Route path="/assistente-ia" element={<TutorGate><AssistenteIA /></TutorGate>} />
+          <Route path="/historico" element={<TutorGate><HistoricoInteligente /></TutorGate>} />
+          <Route path="/veterinarios" element={<TutorGate><Veterinarios /></TutorGate>} />
+
           <Route path="/vet/login" element={<VetLogin />} />
           <Route path="/vet" element={<VetDashboard />} />
           <Route path="/vet/pacientes" element={<VetPacientes />} />

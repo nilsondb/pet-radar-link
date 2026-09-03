@@ -54,9 +54,8 @@ export const reivindicarAdminLegado = async (email: string, senhaAntiga: string)
 export const adminAlterarSenha = async (senhaAtual: string, novaSenha: string) => {
   const { error } = await supabase.auth.updateUser({
     password: novaSenha,
-    // @ts-expect-error current_password é exigido pelo Lovable Cloud em trocas autenticadas
     current_password: senhaAtual,
-  });
+  } as Parameters<typeof supabase.auth.updateUser>[0]);
   if (error) throw error;
 };
 

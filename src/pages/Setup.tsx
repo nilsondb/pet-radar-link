@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useIdFromUrl, useTokenFromUrl, uploadPetPhoto, validateActivationToken } from "@/lib/petUtils";
-import { ensureTutor, fetchTutor } from "@/lib/tutorUtils";
+import { useIdFromUrl, useTokenFromUrl, uploadPetPhoto } from "@/lib/petUtils";
+import { fetchTutor } from "@/lib/tutorUtils";
 import { PetHeader } from "@/components/PetHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,26 +35,17 @@ const Setup = () => {
       return;
     }
     (async () => {
-      const { data: existing } = await supabase
-        .from("pets")
-        .select("id, status_ativado, token")
-        .eq("id", id)
-        .maybeSingle();
-      // Already activated → go to dashboard
-      if (existing?.status_ativado) {
+      // Status de ativação vem de função controlada no servidor (sem expor a tabela)
+      const { data: status } = await supabase.rpc("pet_status_ativacao", { p_id: id });
+      const row = Array.isArray(status) ? status[0] : status;
+      if (row?.ativado) {
         const qs = token ? `?id=${id}&token=${token}` : `?id=${id}`;
         navigate(`/dashboard${qs}`, { replace: true });
         return;
       }
-      if (!token) {
-        setTokenValid(false);
-        setChecking(false);
-        return;
-      }
-      const valid = await validateActivationToken(id, token);
-      setTokenValid(valid);
-      // Novo pet de um tutor existente → pré-preencher os dados do tutor
-      if (valid && tutorParam) {
+      // A validade do token é confirmada no servidor na ativação; aqui apenas exigimos sua presença
+      setTokenValid(!!token);
+      if (token && tutorParam) {
         const tutor = await fetchTutor(tutorParam);
         if (tutor) {
           setForm((f) => ({
@@ -77,55 +68,38 @@ const Setup = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!id) return;
+    if (!id || !token) return;
     setSaving(true);
     try {
-      let foto_url: string | null = null;
-      if (foto) foto_url = await uploadPetPhoto(id, foto);
+      // Ativação autenticada: cria/atualiza pet, tutor e vínculo com a conta no servidor
+      const { error } = await supabase.rpc("ativar_pet_com_token", {
+        p_id: id,
+        p_token: token,
+        p_nome_pet: form.nome_pet.trim(),
+        p_nome_dono: form.nome_dono.trim(),
+        p_telefone: form.telefone.trim(),
+        p_endereco: form.endereco.trim() || null,
+        p_data_nascimento: form.data_nascimento || null,
+        p_peso: form.peso ? Number(form.peso) : null,
+        p_foto_url: null,
+      });
+      if (error) throw error;
 
-      const { peso, ...rest } = form;
-
-      // Vincula o pet a um tutor (reaproveita o tutor existente pelo telefone)
-      const tutor_id =
-        tutorParam ||
-        (await ensureTutor({
-          nome: rest.nome_dono,
-          telefone: rest.telefone,
-          endereco: rest.endereco,
-        }));
-
-      const payload = {
-        ...rest,
-        data_nascimento: rest.data_nascimento || null,
-        peso: peso ? Number(peso) : null,
-        foto_url,
-        status_ativado: true,
-        tutor_id,
-        tag_id: id,
-        ultimo_acesso: new Date().toISOString(),
-      };
-
-      // Check if a placeholder pet already exists (admin pre-created)
-      const { data: existing } = await supabase.from("pets").select("id").eq("id", id).maybeSingle();
-      if (existing) {
-        const { error } = await supabase.from("pets").update(payload).eq("id", id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("pets").insert({ id, token, ...payload });
-        if (error) throw error;
+      // A foto só é enviada depois que o pet existe e pertence ao tutor autenticado
+      if (foto) {
+        const foto_url = await uploadPetPhoto(id, foto);
+        await supabase.from("pets").update({ foto_url }).eq("id", id);
       }
 
-      if (token) {
-        await supabase.from("activation_tokens").update({ used: true }).eq("id", id);
-      }
       toast.success("Pet cadastrado com sucesso! 🐾");
-      navigate(`/dashboard?id=${id}${token ? `&token=${token}` : ""}&pet=1`);
+      navigate(`/dashboard?id=${id}&token=${token}&pet=1`);
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar");
     } finally {
       setSaving(false);
     }
   };
+
 
   if (!id) {
     return (

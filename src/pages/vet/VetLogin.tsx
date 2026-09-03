@@ -21,8 +21,9 @@ const VetLogin = () => {
     setLoading(true);
     try {
       const s = await vetLogin(login.email, login.senha);
-      if (!s) return toast.error("E-mail ou senha inválidos.");
+      if (!s) return toast.error("Conta sem perfil profissional ativo. Complete o cadastro em 'Criar conta'.");
       navigate("/vet", { replace: true });
+
     } catch (err: any) {
       toast.error(err.message || "Erro ao entrar");
     } finally {
@@ -34,15 +35,20 @@ const VetLogin = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await vetSignup(cad);
+      const r = await vetSignup(cad);
+      if (r.precisaConfirmarEmail) {
+        toast.success("Confirme o e-mail enviado para concluir o cadastro profissional. 📧");
+        return;
+      }
       toast.success("Cadastro realizado! 🩺");
       navigate("/vet", { replace: true });
     } catch (err: any) {
-      toast.error(err.message?.includes("duplicate") ? "E-mail já cadastrado." : err.message || "Erro ao cadastrar");
+      toast.error(err.message?.includes("already") ? "E-mail já cadastrado." : err.message || "Erro ao cadastrar");
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-secondary">

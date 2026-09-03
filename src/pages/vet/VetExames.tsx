@@ -3,6 +3,8 @@ import { VetLayout } from "@/components/VetLayout";
 import { getVetSession } from "@/lib/vetAuth";
 import { fetchPacientes } from "@/lib/vetData";
 import { supabase } from "@/integrations/supabase/client";
+import { abrirExame } from "@/lib/exames";
+import { toast } from "sonner";
 import { Loader2, FlaskConical } from "lucide-react";
 
 const VetExames = () => {
@@ -54,9 +56,13 @@ const VetExames = () => {
                 {e.observacoes && <p className="text-sm mt-1">{e.observacoes}</p>}
               </div>
               {e.arquivo_url && (
-                <a href={e.arquivo_url} target="_blank" rel="noreferrer" className="text-sm text-primary font-medium whitespace-nowrap">
+                <button
+                  type="button"
+                  onClick={() => abrirExame(e.arquivo_url).catch(() => toast.error("Não foi possível abrir o arquivo"))}
+                  className="text-sm text-primary font-medium whitespace-nowrap"
+                >
                   Abrir
-                </a>
+                </button>
               )}
             </div>
           ))}
