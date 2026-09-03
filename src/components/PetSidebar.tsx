@@ -46,7 +46,7 @@ export const PetSidebar = ({ id, token, open, onClose }: Props) => {
       >
         <div className="header-gradient text-primary-foreground p-6 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold">Pet_ID</h2>
+            <h2 className="text-xl font-bold">Authera Pet</h2>
             <p className="text-xs opacity-80">Tag #{id.slice(0, 8)}</p>
           </div>
           <button onClick={onClose} aria-label="Fechar menu">

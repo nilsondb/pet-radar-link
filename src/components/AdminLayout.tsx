@@ -33,7 +33,7 @@ export const AdminLayout = ({ children, title }: { children: ReactNode; title: s
     <div className="min-h-screen flex bg-secondary">
       <aside className="w-60 bg-card border-r flex flex-col">
         <div className="p-4 border-b">
-          <h1 className="text-lg font-bold text-primary">Pet_ID 🐾</h1>
+          <h1 className="text-lg font-bold text-primary">Authera Pet 🐾</h1>
           <p className="text-xs text-muted-foreground truncate">{session.nome || session.email}</p>
         </div>
         <nav className="flex-1 p-2 space-y-1">

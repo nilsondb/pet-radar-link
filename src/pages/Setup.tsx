@@ -156,7 +156,7 @@ const Setup = () => {
           <ShieldAlert className="w-12 h-12 mx-auto text-destructive mb-3" />
           <h1 className="text-xl font-bold mb-2">Link de ativação inválido</h1>
           <p className="text-muted-foreground text-sm">
-            Use o link original fornecido com a sua tag NFC Pet_ID para ativar o cadastro.
+            Use o link original fornecido com a sua tag NFC Authera Pet para ativar o cadastro.
           </p>
         </div>
       </div>

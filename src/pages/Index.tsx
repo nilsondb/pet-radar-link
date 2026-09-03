@@ -11,7 +11,7 @@ const Index = () => {
       <header className="header-gradient text-primary-foreground">
         <div className="max-w-3xl mx-auto px-4 py-20 text-center">
           <PawPrint className="w-20 h-20 mx-auto mb-6" />
-          <h1 className="text-5xl md:text-6xl font-bold tracking-tight">Pet_ID</h1>
+          <h1 className="text-5xl md:text-6xl font-bold tracking-tight">Authera Pet</h1>
           <p className="mt-4 text-xl opacity-95 max-w-xl mx-auto">
             Proteção inteligente para pets com tecnologia NFC
           </p>
@@ -85,7 +85,7 @@ const Index = () => {
         </div>
 
         <p className="text-center text-xs text-muted-foreground py-6">
-          Pet_ID 🐾 — Proteção inteligente via NFC
+          Authera Pet 🐾 — Proteção inteligente via NFC
         </p>
       </main>
     </div>

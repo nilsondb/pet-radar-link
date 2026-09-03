@@ -249,7 +249,7 @@ Vou tentar ajudar 👍`;
         )}
 
         <p className="text-center text-xs text-gray-500 pt-2 pb-2">
-          Powered by <span className="font-semibold text-[#8B5CF6]">Pet_ID</span> 🐾
+          Powered by <span className="font-semibold text-[#8B5CF6]">Authera Pet</span> 🐾
         </p>
       </main>
     </div>
