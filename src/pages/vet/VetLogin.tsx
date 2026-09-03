@@ -21,8 +21,9 @@ const VetLogin = () => {
     setLoading(true);
     try {
       const s = await vetLogin(login.email, login.senha);
-      if (!s) return toast.error("E-mail ou senha inválidos.");
+      if (!s) return toast.error("Conta sem perfil profissional ativo. Complete o cadastro em 'Criar conta'.");
       navigate("/vet", { replace: true });
+
     } catch (err: any) {
       toast.error(err.message || "Erro ao entrar");
     } finally {
