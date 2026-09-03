@@ -55,6 +55,15 @@ const App = () => (
           <Route path="/localizacoes" element={<Localizacoes />} />
           <Route path="/assistente-ia" element={<AssistenteIA />} />
           <Route path="/historico" element={<HistoricoInteligente />} />
+          <Route path="/veterinarios" element={<Veterinarios />} />
+          <Route path="/vet/login" element={<VetLogin />} />
+          <Route path="/vet" element={<VetDashboard />} />
+          <Route path="/vet/pacientes" element={<VetPacientes />} />
+          <Route path="/vet/prontuario/:petId" element={<VetProntuario />} />
+          <Route path="/vet/atendimentos" element={<VetAtendimentos />} />
+          <Route path="/vet/exames" element={<VetExames />} />
+          <Route path="/vet/vacinacao" element={<VetVacinacao />} />
+          <Route path="/vet/perfil" element={<VetPerfil />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/pets" element={<AdminPets />} />
