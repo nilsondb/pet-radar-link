@@ -1,9 +1,9 @@
 import { ReactNode, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { getVetSession, vetLogout } from "@/lib/vetAuth";
+import { loadVetSession, vetLogout, VetSession } from "@/lib/vetAuth";
 import {
   LayoutDashboard, Dog, Stethoscope, FlaskConical, Syringe, FileText,
-  UserCircle, LogOut, Menu, X,
+  UserCircle, LogOut, Menu, X, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,19 +19,37 @@ const items = [
 
 export const VetLayout = ({ children, title }: { children: ReactNode; title: string }) => {
   const navigate = useNavigate();
-  const session = getVetSession();
+  const [session, setSession] = useState<VetSession | null>(null);
+  const [checando, setChecando] = useState(true);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    if (!session) navigate("/vet/login", { replace: true });
-  }, [session, navigate]);
+    (async () => {
+      // Sessão oficial do Supabase Auth + perfil profissional validado no banco
+      const s = await loadVetSession();
+      if (!s) {
+        navigate("/vet/login", { replace: true });
+        return;
+      }
+      setSession(s);
+      setChecando(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  if (!session) return null;
+  if (checando || !session) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
-  const sair = () => {
-    vetLogout();
+  const sair = async () => {
+    await vetLogout();
     navigate("/vet/login", { replace: true });
   };
+
 
   return (
     <div className="min-h-screen flex bg-secondary">

@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getUser, hasRole, signIn, signOut, signUp } from "@/lib/auth";
 
 export type AdminSession = {
   id: string;
@@ -6,63 +7,71 @@ export type AdminSession = {
   nome?: string | null;
 };
 
-const KEY = "admin_auth";
-
-export const getAdminSession = (): AdminSession | null => {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as AdminSession;
-  } catch {
-    return null;
-  }
+/**
+ * Autenticação administrativa via Supabase Auth.
+ * A autorização é sempre verificada no banco (papel `admin` em user_roles + RLS),
+ * nunca por valores guardados no navegador.
+ */
+export const adminLogin = async (email: string, senha: string): Promise<AdminSession | null> => {
+  await signIn(email, senha);
+  return adminSessionAtual();
 };
 
-export const isAdminAuthed = () => !!getAdminSession();
+export const adminSignUp = (email: string, senha: string) => signUp(email, senha);
 
-export const adminLogout = () => {
-  localStorage.removeItem(KEY);
-  localStorage.removeItem("isAdmin");
+export const adminLogout = async () => {
+  await signOut();
 };
 
-const sha256 = async (text: string): Promise<string> => {
-  const buf = new TextEncoder().encode(text);
-  const hash = await crypto.subtle.digest("SHA-256", buf);
-  return Array.from(new Uint8Array(hash))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+/** Retorna a sessão administrativa somente se o usuário possuir o papel admin. */
+export const adminSessionAtual = async (): Promise<AdminSession | null> => {
+  const user = await getUser();
+  if (!user) return null;
+  if (!(await hasRole("admin"))) return null;
+  const { data } = await supabase
+    .from("admins")
+    .select("id, email, nome")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  return {
+    id: data?.id ?? user.id,
+    email: data?.email ?? user.email ?? "",
+    nome: data?.nome ?? null,
+  };
 };
 
-export const adminLogin = async (email: string, senha: string) => {
-  const senhaHash = await sha256(senha);
-  const { data, error } = await supabase.rpc("admin_login", {
-    p_email: email,
-    p_senha_hash: senhaHash,
+/** Migração de admin legado: prova a posse da senha antiga e vincula a conta atual. */
+export const reivindicarAdminLegado = async (email: string, senhaAntiga: string) => {
+  const { error } = await supabase.rpc("reivindicar_admin", {
+    p_email: email.trim().toLowerCase(),
+    p_senha: senhaAntiga,
   });
   if (error) throw error;
-  const row = Array.isArray(data) ? data[0] : data;
-  if (!row) return null;
-  const session: AdminSession = { id: row.id, email: row.email, nome: row.nome };
-  localStorage.setItem(KEY, JSON.stringify(session));
-  return session;
+  return true;
 };
 
-export const adminSetPassword = async (id: string, senha: string) => {
-  const senhaHash = await sha256(senha);
-  const { error } = await supabase
-    .from("admins")
-    .update({ senha_hash: senhaHash })
-    .eq("id", id);
+/** Troca de senha do administrador autenticado (Supabase Auth). */
+export const adminAlterarSenha = async (senhaAtual: string, novaSenha: string) => {
+  const { error } = await supabase.auth.updateUser({
+    password: novaSenha,
+    // @ts-expect-error current_password é exigido pelo Lovable Cloud em trocas autenticadas
+    current_password: senhaAtual,
+  });
   if (error) throw error;
 };
 
-export const adminCreate = async (email: string, senha: string, nome: string) => {
-  const senhaHash = await sha256(senha);
-  const { data, error } = await supabase
-    .from("admins")
-    .insert({ email, senha_hash: senhaHash, nome, ativo: true })
-    .select("id")
-    .single();
+export const concederPapel = async (email: string, role: "tutor" | "veterinarian" | "admin") => {
+  const { error } = await supabase.rpc("admin_conceder_papel", {
+    p_email: email.trim().toLowerCase(),
+    p_role: role,
+  });
   if (error) throw error;
-  return data.id as string;
+};
+
+export const revogarPapel = async (email: string, role: "tutor" | "veterinarian" | "admin") => {
+  const { error } = await supabase.rpc("admin_revogar_papel", {
+    p_email: email.trim().toLowerCase(),
+    p_role: role,
+  });
+  if (error) throw error;
 };

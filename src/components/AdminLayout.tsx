@@ -1,7 +1,7 @@
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { adminLogout, getAdminSession } from "@/lib/adminAuth";
-import { LayoutDashboard, Dog, Users, DollarSign, Settings, LogOut, UserCircle, Activity } from "lucide-react";
+import { adminLogout, adminSessionAtual, AdminSession } from "@/lib/adminAuth";
+import { LayoutDashboard, Dog, Users, DollarSign, Settings, LogOut, UserCircle, Activity, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
@@ -16,18 +16,35 @@ const items = [
 
 export const AdminLayout = ({ children, title }: { children: ReactNode; title: string }) => {
   const navigate = useNavigate();
-  const session = getAdminSession();
+  const [session, setSession] = useState<AdminSession | null>(null);
+  const [checando, setChecando] = useState(true);
 
   useEffect(() => {
-    if (!session) navigate("/admin/login", { replace: true });
-  }, [session, navigate]);
+    (async () => {
+      // Autorização verificada no banco (sessão Supabase + papel admin), nunca no localStorage
+      const s = await adminSessionAtual();
+      if (!s) {
+        navigate("/admin/login", { replace: true });
+        return;
+      }
+      setSession(s);
+      setChecando(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const sair = () => {
-    adminLogout();
+  const sair = async () => {
+    await adminLogout();
     navigate("/admin/login", { replace: true });
   };
 
-  if (!session) return null;
+  if (checando || !session) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex bg-secondary">
