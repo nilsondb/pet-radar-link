@@ -5,6 +5,7 @@ import { getVetSession } from "@/lib/vetAuth";
 import { temAcessoAtivo } from "@/lib/vetData";
 import { supabase } from "@/integrations/supabase/client";
 import { calcularIdade } from "@/lib/petUtils";
+import { abrirExame } from "@/lib/exames";
 import { logPetEvento } from "@/lib/petEventos";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -243,9 +244,13 @@ const VetProntuario = () => {
                 {e.data_exame || "—"} · enviado por {e.created_by_role || "tutor"}
               </p>
               {e.arquivo_url && (
-                <a href={e.arquivo_url} target="_blank" rel="noreferrer" className="text-sm text-primary font-medium">
+                <button
+                  type="button"
+                  onClick={() => abrirExame(e.arquivo_url).catch(() => toast.error("Não foi possível abrir o arquivo"))}
+                  className="text-sm text-primary font-medium"
+                >
                   Abrir arquivo
-                </a>
+                </button>
               )}
             </div>
           ))}
