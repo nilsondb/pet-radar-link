@@ -42,7 +42,7 @@ export type Database = {
           email: string
           id: string
           nome: string | null
-          senha_hash: string
+          senha_hash: string | null
           updated_at: string
           user_id: string | null
         }
@@ -52,7 +52,7 @@ export type Database = {
           email: string
           id?: string
           nome?: string | null
-          senha_hash: string
+          senha_hash?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -62,7 +62,7 @@ export type Database = {
           email?: string
           id?: string
           nome?: string | null
-          senha_hash?: string
+          senha_hash?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -887,6 +887,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_conceder_papel: {
+        Args: {
+          p_email: string
+          p_role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
       admin_create: {
         Args: { p_email: string; p_nome: string; p_senha: string }
         Returns: string
@@ -899,6 +906,13 @@ export type Database = {
           id: string
           nome: string
         }[]
+      }
+      admin_revogar_papel: {
+        Args: {
+          p_email: string
+          p_role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
       }
       admin_set_password: {
         Args: { p_id: string; p_senha: string }
