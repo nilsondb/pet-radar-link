@@ -1,24 +1,28 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { adminSetPassword, getAdminSession } from "@/lib/adminAuth";
+import { adminAlterarSenha, adminSessionAtual, AdminSession } from "@/lib/adminAuth";
 import { toast } from "sonner";
 
 const AdminPerfil = () => {
-  const session = getAdminSession();
+  const [session, setSession] = useState<AdminSession | null>(null);
+  const [atual, setAtual] = useState("");
   const [senha, setSenha] = useState("");
   const [confirma, setConfirma] = useState("");
 
+  useEffect(() => {
+    adminSessionAtual().then(setSession);
+  }, []);
+
   const salvar = async () => {
-    if (!session) return;
     if (senha.length < 6) return toast.error("Senha mínima de 6 caracteres");
     if (senha !== confirma) return toast.error("Senhas não coincidem");
     try {
-      await adminSetPassword(session.id, senha);
+      await adminAlterarSenha(atual, senha);
       toast.success("Senha alterada com sucesso");
-      setSenha(""); setConfirma("");
+      setAtual(""); setSenha(""); setConfirma("");
     } catch (e: any) { toast.error(e.message); }
   };
 
@@ -28,6 +32,10 @@ const AdminPerfil = () => {
         <div>
           <Label>Email</Label>
           <Input value={session?.email || ""} disabled />
+        </div>
+        <div>
+          <Label>Senha atual</Label>
+          <Input type="password" value={atual} onChange={(e) => setAtual(e.target.value)} />
         </div>
         <div>
           <Label>Nova senha</Label>
