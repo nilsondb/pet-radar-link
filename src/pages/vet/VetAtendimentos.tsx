@@ -4,6 +4,7 @@ import { VetLayout } from "@/components/VetLayout";
 import { getVetSession } from "@/lib/vetAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Stethoscope } from "lucide-react";
+import { toast } from "sonner";
 
 const VetAtendimentos = () => {
   const session = getVetSession();
@@ -11,18 +12,23 @@ const VetAtendimentos = () => {
   const [itens, setItens] = useState<any[]>([]);
 
   useEffect(() => {
-    if (!session) return;
+    if (!session) {
+      setLoading(false);
+      return;
+    }
+
     (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("atendimentos_veterinarios")
-        .select("id, pet_id, data_atendimento, motivo, anamnese, pet:pets(nome_pet)")
+        .select("id, pet_id, data_atendimento, motivo, anamnese, pet:pets(nome)")
         .eq("veterinarian_id", session.id)
         .order("data_atendimento", { ascending: false });
+
+      if (error) toast.error(error.message);
       setItens(data || []);
       setLoading(false);
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [session?.id]);
 
   return (
     <VetLayout title="Atendimentos">
@@ -42,7 +48,7 @@ const VetAtendimentos = () => {
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-muted-foreground">{new Date(a.data_atendimento).toLocaleString("pt-BR")}</p>
                 <p className="font-medium truncate">{a.motivo || "Atendimento"}</p>
-                <p className="text-sm text-muted-foreground truncate">{a.pet?.nome_pet || a.pet_id}</p>
+                <p className="text-sm text-muted-foreground truncate">{a.pet?.nome || a.pet_id}</p>
               </div>
               <Link to={`/vet/prontuario/${a.pet_id}`} className="text-sm text-primary font-medium whitespace-nowrap">
                 Prontuário
