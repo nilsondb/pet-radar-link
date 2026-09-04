@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useIdFromUrl, petPhotoUrl } from "@/lib/petUtils";
+import { useIdFromUrl, publicPetPhotoUrl } from "@/lib/petUtils";
 import { PetHeader } from "@/components/PetHeader";
 import { PetSidebar } from "@/components/PetSidebar";
 import { PetSwitcher } from "@/components/PetSwitcher";
@@ -54,7 +54,7 @@ const Dashboard = () => {
 
   if (loading || !pet) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
-  const fotoUrl = petPhotoUrl(pet.foto_path);
+  const fotoUrl = publicPetPhotoUrl(pet.foto_path);
 
   return (
     <div className="min-h-screen">
