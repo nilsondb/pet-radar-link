@@ -2,11 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+@import "@fontsource/sora/600.css";
+@import "@fontsource/sora/700.css";
+@import "@fontsource/sora/800.css";
+@import "@fontsource/manrope/400.css";
+@import "@fontsource/manrope/500.css";
+@import "@fontsource/manrope/600.css";
+@import "@fontsource/manrope/700.css";
+
 @layer base {
   :root {
     /* Authera Pet design system - bege + lilás */
-    --background: 60 56% 91%; /* #F5F5DC bege */
-    --foreground: 260 25% 18%;
+    --background: 60 33% 95%;
+    --foreground: 220 43% 17%;
 
     --card: 0 0% 100%;
     --card-foreground: 260 25% 18%;
@@ -14,15 +22,15 @@
     --popover: 0 0% 100%;
     --popover-foreground: 260 25% 18%;
 
-    --primary: 258 90% 66%; /* #8B5CF6 lilás */
+    --primary: 211 100% 55%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 258 90% 76%;
+    --primary-glow: 187 100% 44%;
 
-    --secondary: 60 40% 85%;
-    --secondary-foreground: 260 25% 18%;
+    --secondary: 60 30% 91%;
+    --secondary-foreground: 220 43% 17%;
 
-    --muted: 60 30% 88%;
-    --muted-foreground: 260 10% 40%;
+    --muted: 210 23% 92%;
+    --muted-foreground: 219 14% 42%;
 
     --accent: 258 90% 95%;
     --accent-foreground: 258 90% 40%;
@@ -36,24 +44,30 @@
     --warning: 38 92% 50%;
     --warning-foreground: 30 80% 20%;
 
-    --border: 60 20% 80%;
-    --input: 60 20% 85%;
-    --ring: 258 90% 66%;
+    --border: 210 25% 85%;
+    --input: 210 25% 88%;
+    --ring: 187 100% 44%;
 
-    --radius: 1rem;
+    --radius: 1.25rem;
 
     /* Authera landing tech palette */
-    --navy: 222 60% 12%;
-    --navy-deep: 224 64% 8%;
-    --tech-blue: 220 90% 55%;
-    --tech-cyan: 186 90% 48%;
-    --tech-violet: 262 83% 62%;
-    --gradient-hero: linear-gradient(135deg, hsl(var(--navy-deep)) 0%, hsl(222 70% 16%) 45%, hsl(258 60% 22%) 100%);
-    --gradient-cyan: linear-gradient(135deg, hsl(var(--tech-cyan)), hsl(196 85% 42%));
-    --gradient-violet: linear-gradient(135deg, hsl(var(--tech-violet)), hsl(230 80% 55%));
+    --navy: 218 76% 13%;
+    --navy-deep: 220 76% 8%;
+    --tech-blue: 212 100% 55%;
+    --tech-cyan: 187 100% 44%;
+    --tech-violet: 258 78% 59%;
+    --gradient-hero: linear-gradient(120deg, hsl(var(--navy-deep)) 0%, hsl(var(--navy)) 46%, hsl(250 57% 21%) 100%);
+    --gradient-cyan: linear-gradient(110deg, hsl(var(--tech-cyan)), hsl(var(--tech-blue)));
+    --gradient-violet: linear-gradient(110deg, hsl(var(--tech-violet)), hsl(var(--tech-blue)));
     --gradient-header: linear-gradient(135deg, hsl(258 90% 66%), hsl(270 85% 60%));
-    --shadow-card: 0 4px 20px -4px hsl(258 30% 40% / 0.12);
+    --shadow-card: 0 24px 65px -30px hsl(var(--navy-deep) / 0.34), 0 8px 24px -14px hsl(var(--tech-blue) / 0.16);
     --shadow-soft: 0 2px 10px -2px hsl(60 20% 30% / 0.08);
+    --shadow-step: 0 12px 35px -18px hsl(var(--tech-blue) / 0.5);
+    --shadow-tech-dot: 0 0 20px 5px hsl(var(--tech-cyan) / 0.3);
+    --gradient-step: linear-gradient(90deg, hsl(var(--tech-cyan) / 0.18), hsl(var(--tech-blue) / 0.5), hsl(var(--tech-violet) / 0.18));
+    --gradient-title: linear-gradient(90deg, hsl(var(--tech-cyan)), hsl(var(--tech-blue)));
+    --gradient-card-tutor: linear-gradient(135deg, hsl(var(--card)) 48%, hsl(var(--tech-cyan) / 0.07));
+    --gradient-card-vet: linear-gradient(135deg, hsl(var(--card)) 48%, hsl(var(--tech-violet) / 0.07));
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 260 25% 18%;
@@ -92,15 +106,13 @@
   * { @apply border-border; }
   body {
     @apply bg-background text-foreground;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-family: "Manrope", system-ui, sans-serif;
   }
 }
 
 @layer components {
-  .pet-card {
-    @apply bg-card rounded-2xl p-6;
-    box-shadow: var(--shadow-card);
-  }
+  .font-heading { font-family: "Sora", system-ui, sans-serif; }
+  .font-body { font-family: "Manrope", system-ui, sans-serif; }
   .header-gradient {
     background: var(--gradient-header);
   }
@@ -114,5 +126,38 @@
   .btn-violet {
     background: var(--gradient-violet);
     @apply text-primary-foreground;
+  }
+  .hero-title-gradient {
+    background: var(--gradient-title);
+    @apply bg-clip-text text-transparent;
+  }
+  .access-card {
+    @apply flex min-h-[470px] flex-col rounded-[2rem] border border-card/70 p-7 sm:p-10;
+    box-shadow: var(--shadow-card);
+    transition: transform 300ms ease, box-shadow 300ms ease;
+  }
+  .access-card:hover { transform: translateY(-4px); }
+  .access-card-tutor { background: var(--gradient-card-tutor); }
+  .access-card-vet { background: var(--gradient-card-vet); }
+  .bg-step-line { background: var(--gradient-step); }
+  .shadow-step { box-shadow: var(--shadow-step); }
+  .shadow-tech-dot { box-shadow: var(--shadow-tech-dot); }
+  .hero-pets { filter: drop-shadow(0 24px 28px hsl(var(--navy-deep) / 0.34)) drop-shadow(0 0 30px hsl(var(--tech-cyan) / 0.1)); }
+  .hero-light {
+    @apply pointer-events-none absolute rounded-full;
+    filter: blur(90px);
+  }
+  .hero-light-one {
+    @apply -right-32 top-24 h-80 w-80 bg-authera-cyan/10;
+  }
+  .hero-light-two {
+    @apply bottom-0 left-[38%] h-64 w-64 bg-authera-violet/10;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }
