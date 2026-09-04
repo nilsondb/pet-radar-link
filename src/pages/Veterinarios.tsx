@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useIdFromUrl, useTokenFromUrl, validateActivationToken } from "@/lib/petUtils";
+import { useIdFromUrl } from "@/lib/petUtils";
+import { supabase } from "@/integrations/supabase/client";
 import { fetchVinculosDoPet, atualizarVinculo } from "@/lib/vetData";
 import { logPetEvento } from "@/lib/petEventos";
 import { PetHeader } from "@/components/PetHeader";
@@ -11,7 +12,6 @@ import { toast } from "sonner";
 
 const Veterinarios = () => {
   const id = useIdFromUrl();
-  const token = useTokenFromUrl();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [autorizado, setAutorizado] = useState(false);
@@ -24,17 +24,19 @@ const Veterinarios = () => {
 
   useEffect(() => {
     if (!id) {
-      navigate("/setup", { replace: true });
+      navigate("/meus-pets", { replace: true });
       return;
     }
     (async () => {
-      const valido = token ? await validateActivationToken(id, token) : false;
+      // A autorização real é a RLS; aqui apenas confirmamos a posse pela sessão.
+      const { data: meu } = await supabase.rpc("e_meu_pet", { p_pet_id: id });
+      const valido = meu === true;
       setAutorizado(valido);
       if (valido) await carregar(id);
       setLoading(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, token]);
+  }, [id]);
 
   const agir = async (vinculoId: string, status: "active" | "revoked", nome: string) => {
     try {
@@ -65,7 +67,7 @@ const Veterinarios = () => {
         <div className="pet-card max-w-md text-center">
           <ShieldAlert className="w-12 h-12 mx-auto text-destructive mb-3" />
           <h1 className="text-xl font-bold mb-2">Acesso restrito</h1>
-          <p className="text-muted-foreground">Abra esta página pelo link privado da sua tag NFC.</p>
+          <p className="text-muted-foreground">Este pet não está vinculado à sua conta.</p>
         </div>
       </div>
     );
