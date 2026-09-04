@@ -21,12 +21,11 @@ const VetProntuarios = () => {
       setLista(await fetchPacientes(session.id, "active"));
       setLoading(false);
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [session?.id]);
 
   const filtrados = lista.filter((v) => {
     const t = busca.toLowerCase();
-    return !t || (v.pet?.nome_pet || "").toLowerCase().includes(t) || v.pet_id.toLowerCase().includes(t);
+    return !t || (v.pet?.nome || "").toLowerCase().includes(t) || v.pet_id.toLowerCase().includes(t);
   });
 
   return (
@@ -50,9 +49,9 @@ const VetProntuarios = () => {
                 <FileText className="w-5 h-5" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold truncate">{v.pet?.nome_pet || v.pet_id}</p>
+                <p className="font-semibold truncate">{v.pet?.nome || v.pet_id}</p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {v.pet?.especie || "—"} · {calcularIdade(v.pet?.data_nascimento ?? null)} · Tutor: {v.pet?.nome_dono || "—"}
+                  {v.pet?.especie || "—"} · {calcularIdade(v.pet?.data_nascimento ?? null)} · Tutor: {v.pet?.tutor_nome || "—"}
                 </p>
               </div>
               <Button asChild variant="outline" size="sm">
