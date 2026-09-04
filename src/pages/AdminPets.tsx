@@ -65,7 +65,7 @@ const AdminPets = () => {
   const abrirPublica = (p: Pet) => {
     const tag = tagAtiva(p);
     if (!tag) return toast.error("Este pet não possui TAG ativa.");
-    window.open(`/pet?id=${tag.uid_publico}`, "_blank");
+    window.open(`/p/${encodeURIComponent(tag.uid_publico)}`, "_blank");
   };
 
   const deletar = async (p: Pet) => {
