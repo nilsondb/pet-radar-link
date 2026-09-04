@@ -17,11 +17,19 @@ export async function signIn(email: string, senha: string) {
   return data.session;
 }
 
-export async function signUp(email: string, senha: string, metadata?: Record<string, unknown>) {
+export async function signUp(
+  email: string,
+  senha: string,
+  metadata?: Record<string, unknown>,
+  redirectTo?: string
+) {
   const { data, error } = await supabase.auth.signUp({
     email: email.trim().toLowerCase(),
     password: senha,
-    options: { emailRedirectTo: window.location.origin, data: metadata },
+    options: {
+      emailRedirectTo: redirectTo || window.location.href,
+      data: metadata,
+    },
   });
   if (error) throw error;
   return data.session; // null quando a confirmação de e-mail está ativa
