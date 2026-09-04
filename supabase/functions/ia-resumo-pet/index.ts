@@ -1,150 +1,113 @@
-// supabase/functions/ia-resumo-pet/index.ts
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const SYSTEM_PROMPT = `Você é um assistente veterinário virtual especializado em acompanhamento contínuo de pets.
-
-Analise o histórico completo do pet e gere uma resposta em JSON com a seguinte estrutura:
-{
-  "resumo": "texto explicando a saúde geral do pet em linguagem simples (3-5 frases)",
-  "score_saude": "verde" | "amarelo" | "vermelho",
-  "alertas": ["alerta 1", "alerta 2"],
-  "recomendacoes": ["recomendação 1", "recomendação 2"]
-}
-
-Critérios para o score:
-- verde: tudo em dia, sem alertas críticos
-- amarelo: alguma atenção (vacina próxima do vencimento, leve variação de peso)
-- vermelho: vacinas atrasadas, perda significativa de peso, status perdido, exames recentes preocupantes
-
-REGRAS:
-- nunca dar diagnóstico definitivo
-- nunca receitar medicamentos
-- usar linguagem simples e educativa
-- recomendar veterinário quando necessário
-- sempre incluir a frase "⚠️ Este assistente não substitui um veterinário." no final do resumo
-- responder APENAS com o JSON, sem markdown, sem texto extra`;
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method !== "POST") return json({ error: "Método não permitido" }, 405);
 
   try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) return json({ error: "Não autenticado" }, 401);
+
     const { pet_id } = await req.json();
-    if (!pet_id) {
-      return new Response(JSON.stringify({ error: "pet_id obrigatório" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!pet_id || typeof pet_id !== "string") return json({ error: "pet_id obrigatório" }, 400);
 
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const aiUrl = Deno.env.get("AUTHERA_AI_URL");
+    const aiToken = Deno.env.get("AUTHERA_AI_TOKEN");
 
-    const sb = createClient(SUPABASE_URL, SERVICE_KEY);
+    if (!supabaseUrl || !anonKey) return json({ error: "Supabase não configurado" }, 500);
 
-    const [petR, vacR, medR, exameR, eventR, locR] = await Promise.all([
-      sb.from("pets").select("*").eq("id", pet_id).maybeSingle(),
-      sb.from("vacinas").select("*").eq("pet_id", pet_id).order("data_aplicacao", { ascending: false }),
-      sb.from("medicamentos").select("*").eq("pet_id", pet_id).order("created_at", { ascending: false }),
-      sb.from("exames").select("*").eq("pet_id", pet_id).order("data_exame", { ascending: false }),
-      sb.from("pet_eventos").select("*").eq("pet_id", pet_id).order("created_at", { ascending: false }).limit(50),
-      sb.from("pet_localizacoes").select("*").eq("pet_id", pet_id).order("data_leitura", { ascending: false }).limit(10),
+    const sb = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+
+    const { data: userData, error: userError } = await sb.auth.getUser();
+    if (userError || !userData.user) return json({ error: "Sessão inválida" }, 401);
+
+    const [petR, vacR, vermR, medR, exameR, eventR] = await Promise.all([
+      sb.from("pets").select("id,nome,especie,raca,sexo,data_nascimento,peso_kg,status_perdido,perdido_desde").eq("id", pet_id).eq("ativo", true).maybeSingle(),
+      sb.from("vacinas").select("nome_vacina,data_aplicacao,proxima_data,observacoes").eq("pet_id", pet_id).order("data_aplicacao", { ascending: false }).limit(20),
+      sb.from("vermifugacoes").select("produto,data_aplicacao,proxima_data,dose,observacoes").eq("pet_id", pet_id).order("data_aplicacao", { ascending: false }).limit(20),
+      sb.from("medicamentos").select("nome_medicamento,dosagem,frequencia,horario,data_inicio,data_fim,observacoes").eq("pet_id", pet_id).order("created_at", { ascending: false }).limit(30),
+      sb.from("exames").select("nome_exame,data_exame,observacoes").eq("pet_id", pet_id).order("data_exame", { ascending: false }).limit(20),
+      sb.from("pet_eventos").select("tipo_evento,titulo,descricao,dados_json,created_at").eq("pet_id", pet_id).order("created_at", { ascending: false }).limit(50),
     ]);
 
-    const pet = petR.data;
-    if (!pet) {
-      return new Response(JSON.stringify({ error: "Pet não encontrado" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (petR.error) return json({ error: "Falha ao consultar o pet" }, 500);
+    if (!petR.data) return json({ error: "Pet não encontrado ou acesso não autorizado" }, 404);
+
+    if (!aiUrl) {
+      return json({
+        error: "Motor Authera IA ainda não configurado",
+        code: "AUTHERA_AI_NOT_CONFIGURED",
+      }, 503);
     }
 
     const contexto = {
-      pet: {
-        nome: pet.nome_pet,
-        nascimento: pet.data_nascimento,
-        peso_atual: pet.peso,
-        status_perdido: pet.status_perdido,
-        data_perdido: pet.data_perdido,
-      },
+      pet: petR.data,
       vacinas: vacR.data || [],
+      vermifugacoes: vermR.data || [],
       medicamentos: medR.data || [],
       exames: exameR.data || [],
-      localizacoes_recentes: locR.data || [],
       eventos_recentes: eventR.data || [],
       data_atual: new Date().toISOString(),
     };
 
-    const userMsg = `Histórico do pet (JSON):\n${JSON.stringify(contexto)}\n\nGere a análise no formato JSON solicitado.`;
-
-    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiRes = await fetch(`${aiUrl.replace(/\/$/, "")}/v1/pet/summary`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
+        ...(aiToken ? { Authorization: `Bearer ${aiToken}` } : {}),
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: userMsg },
-        ],
-        response_format: { type: "json_object" },
+        pet_id,
+        user_id: userData.user.id,
+        contexto,
       }),
     });
 
     if (!aiRes.ok) {
-      if (aiRes.status === 429) {
-        return new Response(JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em instantes." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (aiRes.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos de IA esgotados. Adicione fundos no workspace." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const t = await aiRes.text();
-      console.error("AI error:", aiRes.status, t);
-      return new Response(JSON.stringify({ error: "Erro na IA" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      const detail = await aiRes.text().catch(() => "");
+      console.error("AUTHERA_AI summary error", aiRes.status, detail.slice(0, 500));
+      return json({ error: "Motor Authera IA indisponível" }, 502);
     }
 
     const aiData = await aiRes.json();
-    const raw: string = aiData.choices?.[0]?.message?.content ?? "{}";
-    let parsed: any;
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      const match = raw.match(/\{[\s\S]*\}/);
-      parsed = match ? JSON.parse(match[0]) : { resumo: raw, score_saude: "verde", alertas: [], recomendacoes: [] };
+    const score = ["verde", "amarelo", "vermelho"].includes(aiData?.score_saude)
+      ? aiData.score_saude
+      : "amarelo";
+
+    const resumo = typeof aiData?.resumo === "string" ? aiData.resumo : "Resumo indisponível.";
+    const alertas = Array.isArray(aiData?.alertas) ? aiData.alertas.slice(0, 20) : [];
+    const recomendacoes = Array.isArray(aiData?.recomendacoes) ? aiData.recomendacoes.slice(0, 20) : [];
+
+    const { data: salvo, error: saveError } = await sb
+      .from("pet_resumos_ia")
+      .insert({ pet_id, resumo, score_saude: score, alertas, recomendacoes })
+      .select("id,resumo,score_saude,alertas,recomendacoes,created_at")
+      .maybeSingle();
+
+    if (saveError) {
+      console.error("pet_resumos_ia insert error", saveError.message);
+      return json({ error: "Análise gerada, mas não foi possível salvar o resumo" }, 500);
     }
 
-    const score = ["verde", "amarelo", "vermelho"].includes(parsed.score_saude) ? parsed.score_saude : "verde";
-
-    const insert = await sb.from("pet_resumos_ia").insert({
-      pet_id,
-      resumo: parsed.resumo || "Sem resumo disponível.",
-      score_saude: score,
-      alertas: Array.isArray(parsed.alertas) ? parsed.alertas : [],
-      recomendacoes: Array.isArray(parsed.recomendacoes) ? parsed.recomendacoes : [],
-    }).select().maybeSingle();
-
-    return new Response(JSON.stringify({ resumo: insert.data ?? parsed }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  } catch (e) {
-    console.error("ia-resumo-pet error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Erro" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ resumo: salvo });
+  } catch (error) {
+    console.error("ia-resumo-pet error", error);
+    return json({ error: "Erro interno ao gerar análise" }, 500);
   }
 });
