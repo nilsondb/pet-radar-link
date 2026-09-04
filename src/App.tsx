@@ -4,6 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { TutorGate } from "@/components/TutorGate";
+import { AdminGate } from "@/components/AdminGate";
+import { VetGate } from "@/components/VetGate";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Setup from "./pages/Setup.tsx";
@@ -60,21 +62,21 @@ const App = () => (
           <Route path="/veterinarios" element={<TutorGate><Veterinarios /></TutorGate>} />
 
           <Route path="/vet/login" element={<VetLogin />} />
-          <Route path="/vet" element={<VetDashboard />} />
-          <Route path="/vet/pacientes" element={<VetPacientes />} />
-          <Route path="/vet/prontuario/:petId" element={<VetProntuario />} />
-          <Route path="/vet/atendimentos" element={<VetAtendimentos />} />
-          <Route path="/vet/exames" element={<VetExames />} />
-          <Route path="/vet/vacinacao" element={<VetVacinacao />} />
-          <Route path="/vet/perfil" element={<VetPerfil />} />
+          <Route path="/vet" element={<VetGate><VetDashboard /></VetGate>} />
+          <Route path="/vet/pacientes" element={<VetGate><VetPacientes /></VetGate>} />
+          <Route path="/vet/prontuario/:petId" element={<VetGate><VetProntuario /></VetGate>} />
+          <Route path="/vet/atendimentos" element={<VetGate><VetAtendimentos /></VetGate>} />
+          <Route path="/vet/exames" element={<VetGate><VetExames /></VetGate>} />
+          <Route path="/vet/vacinacao" element={<VetGate><VetVacinacao /></VetGate>} />
+          <Route path="/vet/perfil" element={<VetGate><VetPerfil /></VetGate>} />
           <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/admin/pets" element={<AdminPets />} />
-          <Route path="/admin/usuarios" element={<AdminUsuarios />} />
-          <Route path="/admin/financeiro" element={<AdminFinanceiro />} />
-          <Route path="/admin/perfil" element={<AdminPerfil />} />
-          <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
-          <Route path="/admin/saas-center" element={<AdminSaasCenter />} />
+          <Route path="/admin" element={<AdminGate><Admin /></AdminGate>} />
+          <Route path="/admin/pets" element={<AdminGate><AdminPets /></AdminGate>} />
+          <Route path="/admin/usuarios" element={<AdminGate><AdminUsuarios /></AdminGate>} />
+          <Route path="/admin/financeiro" element={<AdminGate><AdminFinanceiro /></AdminGate>} />
+          <Route path="/admin/perfil" element={<AdminGate><AdminPerfil /></AdminGate>} />
+          <Route path="/admin/configuracoes" element={<AdminGate><AdminConfiguracoes /></AdminGate>} />
+          <Route path="/admin/saas-center" element={<AdminGate><AdminSaasCenter /></AdminGate>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
