@@ -57,6 +57,8 @@ const App = () => (
           ================================================== */}
 
           <Route path="/" element={<Index />} />
+          <Route path="/p/:uid" element={<PetPublic />} />
+          {/* Compatibilidade temporária com links antigos /pet?id=... */}
           <Route path="/pet" element={<PetPublic />} />
 
           {/* ==================================================
@@ -64,259 +66,47 @@ const App = () => (
               Supabase Auth + TutorGate + RLS
           ================================================== */}
 
-          <Route
-            path="/setup"
-            element={
-              <TutorGate>
-                <Setup />
-              </TutorGate>
-            }
-          />
+          <Route path="/setup" element={<TutorGate><Setup /></TutorGate>} />
+          <Route path="/dashboard" element={<TutorGate><Dashboard /></TutorGate>} />
+          <Route path="/meus-pets" element={<TutorGate><MeusPets /></TutorGate>} />
+          <Route path="/edit" element={<TutorGate><Edit /></TutorGate>} />
+          <Route path="/vacinas" element={<TutorGate><Vacinas /></TutorGate>} />
+          <Route path="/vermifugacao" element={<TutorGate><Vermifugacao /></TutorGate>} />
+          <Route path="/saude" element={<TutorGate><Saude /></TutorGate>} />
+          <Route path="/localizacoes" element={<TutorGate><Localizacoes /></TutorGate>} />
+          <Route path="/historico" element={<TutorGate><HistoricoInteligente /></TutorGate>} />
 
-          <Route
-            path="/dashboard"
-            element={
-              <TutorGate>
-                <Dashboard />
-              </TutorGate>
-            }
-          />
-
-          <Route
-            path="/meus-pets"
-            element={
-              <TutorGate>
-                <MeusPets />
-              </TutorGate>
-            }
-          />
-
-          <Route
-            path="/edit"
-            element={
-              <TutorGate>
-                <Edit />
-              </TutorGate>
-            }
-          />
-
-          <Route
-            path="/vacinas"
-            element={
-              <TutorGate>
-                <Vacinas />
-              </TutorGate>
-            }
-          />
-
-          <Route
-            path="/vermifugacao"
-            element={
-              <TutorGate>
-                <Vermifugacao />
-              </TutorGate>
-            }
-          />
-
-          <Route
-            path="/saude"
-            element={
-              <TutorGate>
-                <Saude />
-              </TutorGate>
-            }
-          />
-
-          <Route
-            path="/localizacoes"
-            element={
-              <TutorGate>
-                <Localizacoes />
-              </TutorGate>
-            }
-          />
-
-          <Route
-            path="/historico"
-            element={
-              <TutorGate>
-                <HistoricoInteligente />
-              </TutorGate>
-            }
-          />
-
-          {/*
-            Mantida por compatibilidade.
-            Não aparece mais como item principal da sidebar do Tutor.
-          */}
-          <Route
-            path="/veterinarios"
-            element={
-              <TutorGate>
-                <Veterinarios />
-              </TutorGate>
-            }
-          />
+          {/* Mantida por compatibilidade; não aparece na sidebar principal do Tutor. */}
+          <Route path="/veterinarios" element={<TutorGate><Veterinarios /></TutorGate>} />
 
           {/* ==================================================
               VETERINÁRIO
-              Login público; demais rotas protegidas por VetGate
           ================================================== */}
 
           <Route path="/vet/login" element={<VetLogin />} />
-
-          <Route
-            path="/vet"
-            element={
-              <VetGate>
-                <VetDashboard />
-              </VetGate>
-            }
-          />
-
-          <Route
-            path="/vet/pacientes"
-            element={
-              <VetGate>
-                <VetPacientes />
-              </VetGate>
-            }
-          />
-
-          <Route
-            path="/vet/prontuario/:petId"
-            element={
-              <VetGate>
-                <VetProntuario />
-              </VetGate>
-            }
-          />
-
-          <Route
-            path="/vet/prontuarios"
-            element={
-              <VetGate>
-                <VetProntuarios />
-              </VetGate>
-            }
-          />
-
-          <Route
-            path="/vet/atendimentos"
-            element={
-              <VetGate>
-                <VetAtendimentos />
-              </VetGate>
-            }
-          />
-
-          <Route
-            path="/vet/exames"
-            element={
-              <VetGate>
-                <VetExames />
-              </VetGate>
-            }
-          />
-
-          <Route
-            path="/vet/vacinacao"
-            element={
-              <VetGate>
-                <VetVacinacao />
-              </VetGate>
-            }
-          />
-
-          <Route
-            path="/vet/perfil"
-            element={
-              <VetGate>
-                <VetPerfil />
-              </VetGate>
-            }
-          />
+          <Route path="/vet" element={<VetGate><VetDashboard /></VetGate>} />
+          <Route path="/vet/pacientes" element={<VetGate><VetPacientes /></VetGate>} />
+          <Route path="/vet/prontuario/:petId" element={<VetGate><VetProntuario /></VetGate>} />
+          <Route path="/vet/prontuarios" element={<VetGate><VetProntuarios /></VetGate>} />
+          <Route path="/vet/atendimentos" element={<VetGate><VetAtendimentos /></VetGate>} />
+          <Route path="/vet/exames" element={<VetGate><VetExames /></VetGate>} />
+          <Route path="/vet/vacinacao" element={<VetGate><VetVacinacao /></VetGate>} />
+          <Route path="/vet/perfil" element={<VetGate><VetPerfil /></VetGate>} />
 
           {/* ==================================================
               ADMINISTRADOR
-              Login público; demais rotas protegidas por AdminGate
           ================================================== */}
 
           <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin" element={<AdminGate><Admin /></AdminGate>} />
+          <Route path="/admin/pets" element={<AdminGate><AdminPets /></AdminGate>} />
+          <Route path="/admin/usuarios" element={<AdminGate><AdminUsuarios /></AdminGate>} />
+          <Route path="/admin/tags" element={<AdminGate><AdminTags /></AdminGate>} />
+          <Route path="/admin/financeiro" element={<AdminGate><AdminFinanceiro /></AdminGate>} />
+          <Route path="/admin/perfil" element={<AdminGate><AdminPerfil /></AdminGate>} />
+          <Route path="/admin/configuracoes" element={<AdminGate><AdminConfiguracoes /></AdminGate>} />
+          <Route path="/admin/saas-center" element={<AdminGate><AdminSaasCenter /></AdminGate>} />
 
-          <Route
-            path="/admin"
-            element={
-              <AdminGate>
-                <Admin />
-              </AdminGate>
-            }
-          />
-
-          <Route
-            path="/admin/pets"
-            element={
-              <AdminGate>
-                <AdminPets />
-              </AdminGate>
-            }
-          />
-
-          <Route
-            path="/admin/usuarios"
-            element={
-              <AdminGate>
-                <AdminUsuarios />
-              </AdminGate>
-            }
-          />
-
-          <Route
-            path="/admin/tags"
-            element={
-              <AdminGate>
-                <AdminTags />
-              </AdminGate>
-            }
-          />
-
-          <Route
-            path="/admin/financeiro"
-            element={
-              <AdminGate>
-                <AdminFinanceiro />
-              </AdminGate>
-            }
-          />
-
-          <Route
-            path="/admin/perfil"
-            element={
-              <AdminGate>
-                <AdminPerfil />
-              </AdminGate>
-            }
-          />
-
-          <Route
-            path="/admin/configuracoes"
-            element={
-              <AdminGate>
-                <AdminConfiguracoes />
-              </AdminGate>
-            }
-          />
-
-          <Route
-            path="/admin/saas-center"
-            element={
-              <AdminGate>
-                <AdminSaasCenter />
-              </AdminGate>
-            }
-          />
-
-          {/* Catch-all sempre por último */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
