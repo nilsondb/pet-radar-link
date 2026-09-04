@@ -1,135 +1,106 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const SYSTEM_PROMPT = `Você é um assistente veterinário virtual.
+const MAX_BASE64 = 14_000_000;
+const allowedMime = new Set(["application/pdf", "image/png", "image/jpeg", "image/jpg", "image/webp"]);
 
-Sua função é:
-- explicar exames de pets de forma simples
-- traduzir termos técnicos
-- sugerir possíveis causas (sem afirmar diagnóstico)
-- orientar quando procurar um veterinário
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 
-REGRAS IMPORTANTES:
-- nunca dar diagnóstico definitivo
-- nunca receitar medicamentos
-- nunca substituir um veterinário
-- usar linguagem simples e clara
-
-Se receber uma imagem ou PDF, leia o conteúdo do exame e analise.
-
-Formato da resposta (markdown com títulos):
-1. **Explicação simples**
-2. **Possíveis causas**
-3. **Quando se preocupar**
-4. **Recomendação final**
-
-Sempre incluir no final:
-"⚠️ Este assistente não substitui um veterinário. Procure um profissional para avaliação completa."`;
-
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method !== "POST") return json({ error: "Método não permitido" }, 405);
 
   try {
-    const { pergunta, fileBase64, fileMime } = await req.json();
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) return json({ error: "Não autenticado" }, 401);
+
+    const { pet_id, pergunta, fileBase64, fileMime, fileName } = await req.json();
+    if (!pet_id || typeof pet_id !== "string") return json({ error: "pet_id obrigatório" }, 400);
 
     const hasText = typeof pergunta === "string" && pergunta.trim().length > 0;
     const hasFile = typeof fileBase64 === "string" && fileBase64.length > 0 && typeof fileMime === "string";
+    if (!hasText && !hasFile) return json({ error: "Envie uma pergunta ou arquivo" }, 400);
+    if (hasText && pergunta.length > 8000) return json({ error: "Texto muito longo (máx 8000 caracteres)" }, 400);
+    if (hasFile && !allowedMime.has(fileMime)) return json({ error: "Formato não suportado" }, 400);
+    if (hasFile && fileBase64.length > MAX_BASE64) return json({ error: "Arquivo muito grande (máx ~10MB)" }, 413);
 
-    if (!hasText && !hasFile) {
-      return new Response(JSON.stringify({ error: "Envie um texto ou arquivo" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    if (hasText && pergunta.length > 8000) {
-      return new Response(JSON.stringify({ error: "Texto muito longo (máx 8000 caracteres)" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    if (hasFile) {
-      const allowed = ["application/pdf", "image/png", "image/jpeg", "image/jpg", "image/webp"];
-      if (!allowed.includes(fileMime)) {
-        return new Response(JSON.stringify({ error: "Formato não suportado. Use PDF, PNG, JPG ou WEBP." }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      // ~10MB base64 limit
-      if (fileBase64.length > 14_000_000) {
-        return new Response(JSON.stringify({ error: "Arquivo muito grande (máx ~10MB)" }), {
-          status: 413,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-    }
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const aiUrl = Deno.env.get("AUTHERA_AI_URL");
+    const aiToken = Deno.env.get("AUTHERA_AI_TOKEN");
+    if (!supabaseUrl || !anonKey) return json({ error: "Supabase não configurado" }, 500);
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
-
-    const userContent: any[] = [];
-    userContent.push({
-      type: "text",
-      text: hasText
-        ? `Pergunta do usuário:\n${pergunta}`
-        : "Analise o exame anexado seguindo o formato solicitado.",
+    const sb = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+      auth: { persistSession: false, autoRefreshToken: false },
     });
-    if (hasFile) {
-      userContent.push({
-        type: "image_url",
-        image_url: { url: `data:${fileMime};base64,${fileBase64}` },
-      });
+
+    const { data: userData, error: userError } = await sb.auth.getUser();
+    if (userError || !userData.user) return json({ error: "Sessão inválida" }, 401);
+
+    const [petR, vacR, vermR, medR, exameR] = await Promise.all([
+      sb.from("pets").select("id,nome,especie,raca,sexo,data_nascimento,peso_kg,status_perdido").eq("id", pet_id).eq("ativo", true).maybeSingle(),
+      sb.from("vacinas").select("nome_vacina,data_aplicacao,proxima_data").eq("pet_id", pet_id).order("data_aplicacao", { ascending: false }).limit(10),
+      sb.from("vermifugacoes").select("produto,data_aplicacao,proxima_data,dose").eq("pet_id", pet_id).order("data_aplicacao", { ascending: false }).limit(10),
+      sb.from("medicamentos").select("nome_medicamento,dosagem,frequencia,data_inicio,data_fim").eq("pet_id", pet_id).order("created_at", { ascending: false }).limit(15),
+      sb.from("exames").select("nome_exame,data_exame,observacoes").eq("pet_id", pet_id).order("data_exame", { ascending: false }).limit(10),
+    ]);
+
+    if (petR.error) return json({ error: "Falha ao consultar o pet" }, 500);
+    if (!petR.data) return json({ error: "Pet não encontrado ou acesso não autorizado" }, 404);
+
+    if (!aiUrl) {
+      return json({
+        error: "Motor Authera IA ainda não configurado",
+        code: "AUTHERA_AI_NOT_CONFIGURED",
+      }, 503);
     }
 
-    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiRes = await fetch(`${aiUrl.replace(/\/$/, "")}/v1/pet/exam`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
+        ...(aiToken ? { Authorization: `Bearer ${aiToken}` } : {}),
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: userContent },
-        ],
+        pet_id,
+        user_id: userData.user.id,
+        pergunta: hasText ? pergunta.trim() : null,
+        arquivo: hasFile
+          ? { nome: typeof fileName === "string" ? fileName : null, mime: fileMime, base64: fileBase64 }
+          : null,
+        contexto: {
+          pet: petR.data,
+          vacinas_recentes: vacR.data || [],
+          vermifugacoes_recentes: vermR.data || [],
+          medicamentos_recentes: medR.data || [],
+          exames_recentes: exameR.data || [],
+          data_atual: new Date().toISOString(),
+        },
       }),
     });
 
     if (!aiRes.ok) {
-      if (aiRes.status === 429) {
-        return new Response(JSON.stringify({ error: "Muitas requisições. Tente novamente em instantes." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (aiRes.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos de IA esgotados. Adicione créditos no workspace." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const t = await aiRes.text();
-      console.error("AI gateway error:", aiRes.status, t);
-      return new Response(JSON.stringify({ error: "Erro ao consultar IA" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      const detail = await aiRes.text().catch(() => "");
+      console.error("AUTHERA_AI exam error", aiRes.status, detail.slice(0, 500));
+      return json({ error: "Motor Authera IA indisponível" }, 502);
     }
 
-    const data = await aiRes.json();
-    const resposta = data.choices?.[0]?.message?.content ?? "Sem resposta.";
+    const aiData = await aiRes.json();
+    const resposta = typeof aiData?.resposta === "string" ? aiData.resposta : null;
+    if (!resposta) return json({ error: "Resposta inválida do motor Authera IA" }, 502);
 
-    return new Response(JSON.stringify({ resposta }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  } catch (e) {
-    console.error("ia-exame error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Erro desconhecido" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ resposta });
+  } catch (error) {
+    console.error("ia-exame error", error);
+    return json({ error: "Erro interno ao analisar exame" }, 500);
   }
 });
