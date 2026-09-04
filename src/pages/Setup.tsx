@@ -33,27 +33,31 @@ const Setup = () => {
       setChecking(false);
       return;
     }
+
     (async () => {
-      // Status de ativação vem de função controlada no servidor (sem expor a tabela)
       const { data: status } = await supabase.rpc("pet_status_ativacao", { p_id: id });
       const row = Array.isArray(status) ? status[0] : status;
-      if (row?.ativado) {
-        navigate(`/dashboard?id=${id}`, { replace: true });
+
+      if (row?.ativado && row?.pet_id) {
+        navigate(`/dashboard?id=${row.pet_id}`, { replace: true });
         return;
       }
-      // A validade do token é confirmada no servidor na ativação; aqui apenas exigimos sua presença
+
+      // O token não é validado no navegador. A validação real ocorre na RPC de ativação.
       setTokenValid(!!token);
+
       if (token) {
         const tutor = await fetchMeuTutor();
         if (tutor) {
           setForm((f) => ({
             ...f,
             nome_dono: tutor.nome,
-            telefone: tutor.telefone,
+            telefone: tutor.telefone || "",
             endereco: tutor.endereco || "",
           }));
         }
       }
+
       setChecking(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -67,10 +71,10 @@ const Setup = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id || !token) return;
+
     setSaving(true);
     try {
-      // Ativação autenticada: cria/atualiza pet, tutor e vínculo com a conta no servidor
-      const { error } = await supabase.rpc("ativar_pet_com_token", {
+      const { data: petIdAtivado, error } = await supabase.rpc("ativar_pet_com_token", {
         p_id: id,
         p_token: token,
         p_nome_pet: form.nome_pet.trim(),
@@ -81,23 +85,28 @@ const Setup = () => {
         p_peso: form.peso ? Number(form.peso) : null,
         p_foto_url: null,
       });
-      if (error) throw error;
 
-      // A foto só é enviada depois que o pet existe e pertence ao tutor autenticado
+      if (error) throw error;
+      if (!petIdAtivado) throw new Error("Não foi possível identificar o pet ativado.");
+
+      const petId = petIdAtivado as string;
+
       if (foto) {
-        const foto_url = await uploadPetPhoto(id, foto);
-        await supabase.from("pets").update({ foto_url }).eq("id", id);
+        const fotoPath = await uploadPetPhoto(petId, foto);
+        const { error: fotoError } = await (supabase.from("pets") as any)
+          .update({ foto_path: fotoPath })
+          .eq("id", petId);
+        if (fotoError) throw fotoError;
       }
 
       toast.success("Pet cadastrado com sucesso! 🐾");
-      navigate(`/dashboard?id=${id}`, { replace: true });
+      navigate(`/dashboard?id=${petId}`, { replace: true });
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar");
     } finally {
       setSaving(false);
     }
   };
-
 
   if (!id) {
     return (
