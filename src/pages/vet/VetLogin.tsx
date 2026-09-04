@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { concluirCadastroVeterinario, vetLogin, vetSignup } from "@/lib/vetAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,8 @@ import { Loader2, Stethoscope } from "lucide-react";
 const VetLogin = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [modo, setModo] = useState("login");
+  const [params] = useSearchParams();
+  const [modo, setModo] = useState(params.get("modo") === "cadastro" ? "cadastro" : "login");
   const [login, setLogin] = useState({ email: "", senha: "" });
   const [cad, setCad] = useState({
     nome: "", email: "", senha: "", telefone: "", crmv: "", uf_crmv: "", clinica: "", especialidade: "",
