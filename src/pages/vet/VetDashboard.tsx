@@ -24,8 +24,7 @@ const VetDashboard = () => {
         .eq("veterinarian_id", session.id);
       setAtendimentos(count ?? 0);
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [session?.id]);
 
   const cards = [
     { label: "Pacientes ativos", value: ativos.length, icon: Dog, color: "from-primary to-primary-glow" },
@@ -63,14 +62,14 @@ const VetDashboard = () => {
             {ativos.slice(0, 5).map((v) => (
               <li key={v.id} className="py-3 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-muted overflow-hidden flex items-center justify-center">
-                  {v.pet?.foto_url ? (
-                    <img src={v.pet.foto_url} alt={`Foto de ${v.pet?.nome_pet || "pet"}`} className="w-full h-full object-cover" />
+                  {v.pet?.foto ? (
+                    <img src={v.pet.foto} alt={`Foto de ${v.pet?.nome || "pet"}`} className="w-full h-full object-cover" />
                   ) : (
                     <Dog className="w-5 h-5 text-muted-foreground" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{v.pet?.nome_pet || v.pet_id}</p>
+                  <p className="font-medium truncate">{v.pet?.nome || v.pet_id}</p>
                   <p className="text-xs text-muted-foreground truncate">
                     {v.pet?.raca || "—"} · {calcularIdade(v.pet?.data_nascimento ?? null)}
                   </p>
