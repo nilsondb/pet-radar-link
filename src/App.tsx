@@ -27,12 +27,15 @@ import AdminLogin from "./pages/AdminLogin.tsx";
 import AdminPets from "./pages/AdminPets.tsx";
 import AdminUsuarios from "./pages/AdminUsuarios.tsx";
 import AdminTags from "./pages/AdminTags.tsx";
+import AdminVetSolicitacoes from "./pages/AdminVetSolicitacoes.tsx";
 import AdminFinanceiro from "./pages/AdminFinanceiro.tsx";
 import AdminPerfil from "./pages/AdminPerfil.tsx";
 import AdminConfiguracoes from "./pages/AdminConfiguracoes.tsx";
 import AdminSaasCenter from "./pages/AdminSaasCenter.tsx";
 
 import VetLogin from "./pages/vet/VetLogin.tsx";
+import VetSolicitar from "./pages/vet/VetSolicitar.tsx";
+import VetConvite from "./pages/vet/VetConvite.tsx";
 import VetDashboard from "./pages/vet/VetDashboard.tsx";
 import VetPacientes from "./pages/vet/VetPacientes.tsx";
 import VetProntuario from "./pages/vet/VetProntuario.tsx";
@@ -49,14 +52,12 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/p/:uid" element={<PetPublic />} />
           <Route path="/pet" element={<PetPublic />} />
 
-          {/* O primeiro cadastro de tutor nasce aqui: conta + tutor + primeiro pet + TAG. */}
           <Route path="/setup" element={<Setup />} />
 
           <Route path="/dashboard" element={<TutorGate><Dashboard /></TutorGate>} />
@@ -70,6 +71,8 @@ const App = () => (
           <Route path="/veterinarios" element={<TutorGate><Veterinarios /></TutorGate>} />
 
           <Route path="/vet/login" element={<VetLogin />} />
+          <Route path="/vet/solicitar" element={<VetSolicitar />} />
+          <Route path="/vet/convite" element={<VetConvite />} />
           <Route path="/vet" element={<VetGate><VetDashboard /></VetGate>} />
           <Route path="/vet/pacientes" element={<VetGate><VetPacientes /></VetGate>} />
           <Route path="/vet/prontuario/:petId" element={<VetGate><VetProntuario /></VetGate>} />
@@ -84,6 +87,7 @@ const App = () => (
           <Route path="/admin/pets" element={<AdminGate><AdminPets /></AdminGate>} />
           <Route path="/admin/usuarios" element={<AdminGate><AdminUsuarios /></AdminGate>} />
           <Route path="/admin/tags" element={<AdminGate><AdminTags /></AdminGate>} />
+          <Route path="/admin/veterinarios" element={<AdminGate><AdminVetSolicitacoes /></AdminGate>} />
           <Route path="/admin/financeiro" element={<AdminGate><AdminFinanceiro /></AdminGate>} />
           <Route path="/admin/perfil" element={<AdminGate><AdminPerfil /></AdminGate>} />
           <Route path="/admin/configuracoes" element={<AdminGate><AdminConfiguracoes /></AdminGate>} />
