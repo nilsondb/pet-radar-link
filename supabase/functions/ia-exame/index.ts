@@ -57,26 +57,18 @@ Deno.serve(async (req: Request) => {
     if (petR.error) return json({ error: "Falha ao consultar o pet" }, 500);
     if (!petR.data) return json({ error: "Pet não encontrado ou acesso não autorizado" }, 404);
 
-    if (!aiUrl) {
-      return json({
-        error: "Motor Authera IA ainda não configurado",
-        code: "AUTHERA_AI_NOT_CONFIGURED",
-      }, 503);
-    }
+    await sb.from("ai_usage_events").insert({ user_id: userData.user.id, pet_id, feature: "exam", status: "requested" });
+
+    if (!aiUrl) return json({ error: "Motor Authera IA ainda não configurado", code: "AUTHERA_AI_NOT_CONFIGURED" }, 503);
 
     const aiRes = await fetch(`${aiUrl.replace(/\/$/, "")}/v1/pet/exam`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(aiToken ? { Authorization: `Bearer ${aiToken}` } : {}),
-      },
+      headers: { "Content-Type": "application/json", ...(aiToken ? { Authorization: `Bearer ${aiToken}` } : {}) },
       body: JSON.stringify({
         pet_id,
         user_id: userData.user.id,
         pergunta: hasText ? pergunta.trim() : null,
-        arquivo: hasFile
-          ? { nome: typeof fileName === "string" ? fileName : null, mime: fileMime, base64: fileBase64 }
-          : null,
+        arquivo: hasFile ? { nome: typeof fileName === "string" ? fileName : null, mime: fileMime, base64: fileBase64 } : null,
         contexto: {
           pet: petR.data,
           vacinas_recentes: vacR.data || [],
@@ -91,13 +83,18 @@ Deno.serve(async (req: Request) => {
     if (!aiRes.ok) {
       const detail = await aiRes.text().catch(() => "");
       console.error("AUTHERA_AI exam error", aiRes.status, detail.slice(0, 500));
+      await sb.from("ai_usage_events").insert({ user_id: userData.user.id, pet_id, feature: "exam", status: "error" });
       return json({ error: "Motor Authera IA indisponível" }, 502);
     }
 
     const aiData = await aiRes.json();
     const resposta = typeof aiData?.resposta === "string" ? aiData.resposta : null;
-    if (!resposta) return json({ error: "Resposta inválida do motor Authera IA" }, 502);
+    if (!resposta) {
+      await sb.from("ai_usage_events").insert({ user_id: userData.user.id, pet_id, feature: "exam", status: "error" });
+      return json({ error: "Resposta inválida do motor Authera IA" }, 502);
+    }
 
+    await sb.from("ai_usage_events").insert({ user_id: userData.user.id, pet_id, feature: "exam", status: "success" });
     return json({ resposta });
   } catch (error) {
     console.error("ia-exame error", error);
