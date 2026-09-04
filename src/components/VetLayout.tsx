@@ -46,8 +46,9 @@ export const VetLayout = ({ children, title }: { children: ReactNode; title: str
   }
 
   const sair = async () => {
+    setSession(null);
     await vetLogout();
-    navigate("/vet/login", { replace: true });
+    navigate("/", { replace: true });
   };
 
 

@@ -94,3 +94,83 @@ export async function temAcessoAtivo(petId: string, vetId: string) {
     .maybeSingle();
   return data ? { ok: true, access_level: data.access_level } : { ok: false, access_level: null };
 }
+
+/** Busca mínima de identificação de um pet pelo UID público da TAG (sem dados clínicos). */
+export type PetPorTag = {
+  pet_id: string;
+  nome_pet: string | null;
+  foto_url: string | null;
+  especie: string | null;
+  raca: string | null;
+  sexo: string | null;
+  tag_uid: string | null;
+  tutor_nome: string | null;
+  vinculo_status: VinculoStatus | null;
+};
+
+export async function buscarPetPorTag(uid: string): Promise<PetPorTag | null> {
+  const { data, error } = await supabase.rpc("vet_buscar_pet_por_tag", { p_uid: uid.trim() });
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  return (row as PetPorTag) ?? null;
+}
+
+/** Cadastro clínico de paciente que ainda não usa TAG. O tutor é reaproveitado no servidor. */
+export async function criarPacienteSemTag(dados: {
+  nome_pet: string;
+  especie?: string;
+  raca?: string;
+  sexo?: string;
+  data_nascimento?: string;
+  peso?: string;
+  tutor_nome?: string;
+  tutor_telefone?: string;
+  tutor_email?: string;
+  observacoes?: string;
+}): Promise<string> {
+  const { data, error } = await supabase.rpc("vet_criar_paciente", {
+    p_nome_pet: dados.nome_pet.trim(),
+    p_especie: dados.especie || null,
+    p_raca: dados.raca || null,
+    p_sexo: dados.sexo || null,
+    p_data_nascimento: dados.data_nascimento || null,
+    p_peso: dados.peso ? Number(dados.peso) : null,
+    p_tutor_nome: dados.tutor_nome || null,
+    p_tutor_telefone: dados.tutor_telefone || null,
+    p_tutor_email: dados.tutor_email || null,
+    p_observacoes: dados.observacoes || null,
+  });
+  if (error) throw error;
+  return data as string;
+}
+
+/** Solicitação de TAG para um paciente já existente. O token nunca é exposto ao veterinário. */
+export async function solicitarTag(petId: string, vetId: string, observacoes?: string) {
+  const { error } = await supabase.from("tag_solicitacoes").insert({
+    pet_id: petId,
+    veterinarian_id: vetId,
+    status: "pendente",
+    observacoes: observacoes || null,
+  });
+  if (error) throw error;
+}
+
+export async function fetchSolicitacoesTagDoVet(vetId: string) {
+  const { data } = await supabase
+    .from("tag_solicitacoes")
+    .select("id, pet_id, status, created_at, tag_uid")
+    .eq("veterinarian_id", vetId)
+    .order("created_at", { ascending: false });
+  return data || [];
+}
+
+/** TAG ativa do pet (quando visível pela RLS). */
+export async function fetchTagAtivaDoPet(petId: string) {
+  const { data } = await supabase
+    .from("tags")
+    .select("uid_publico, status, activated_at")
+    .eq("pet_id", petId)
+    .eq("status", "ativa")
+    .maybeSingle();
+  return data;
+}

@@ -133,3 +133,23 @@ export async function fetchMeusPets(): Promise<PetResumo[]> {
     .order("created_at", { ascending: true });
   return (data as PetResumo[]) || [];
 }
+
+/** Ativa (ou substitui) a TAG de um pet que já existe. Nunca cria um novo pet. */
+export async function ativarTagParaPet(uid: string, token: string): Promise<string> {
+  const { data, error } = await supabase.rpc("ativar_tag_para_pet", {
+    p_uid: uid.trim(),
+    p_token: token.trim(),
+  });
+  if (error) throw error;
+  return data as string;
+}
+
+/** Solicitações de TAG do pet visíveis para o tutor. */
+export async function fetchSolicitacoesTagDoPet(petId: string) {
+  const { data } = await supabase
+    .from("tag_solicitacoes")
+    .select("id, status, tag_uid, created_at")
+    .eq("pet_id", petId)
+    .order("created_at", { ascending: false });
+  return data || [];
+}
