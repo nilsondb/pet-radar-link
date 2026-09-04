@@ -1,13 +1,14 @@
 import { ReactNode, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { adminLogout, adminSessionAtual, AdminSession } from "@/lib/adminAuth";
-import { LayoutDashboard, Dog, Users, DollarSign, Settings, LogOut, UserCircle, Activity, Loader2 } from "lucide-react";
+import { LayoutDashboard, Dog, Users, DollarSign, Settings, LogOut, UserCircle, Activity, Loader2, Nfc } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/admin/pets", label: "Pets", icon: Dog },
   { to: "/admin/usuarios", label: "Usuários", icon: Users },
+  { to: "/admin/tags", label: "TAGs", icon: Nfc },
   { to: "/admin/financeiro", label: "Financeiro", icon: DollarSign },
   { to: "/admin/saas-center", label: "SaaS Center", icon: Activity },
   { to: "/admin/configuracoes", label: "Configurações", icon: Settings },
@@ -34,8 +35,9 @@ export const AdminLayout = ({ children, title }: { children: ReactNode; title: s
   }, []);
 
   const sair = async () => {
+    setSession(null);
     await adminLogout();
-    navigate("/admin/login", { replace: true });
+    navigate("/", { replace: true });
   };
 
   if (checando || !session) {
