@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { Loader2, Plus, Search, ShieldOff, ShieldCheck } from "lucide-react";
+import { Loader2, Plus, Search, ShieldOff, ShieldCheck, Trash2 } from "lucide-react";
 
 type Usuario = {
   chave: string;
@@ -61,10 +61,10 @@ const AdminUsuarios = () => {
   const [openNew, setOpenNew] = useState(false);
   const [novo, setNovo] = useState({ email: "" });
   const [detalhe, setDetalhe] = useState<Usuario | null>(null);
+  const [excluindo, setExcluindo] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
-    // Visão consolidada vinda do servidor: os papéis oficiais são os de user_roles.
     const { data, error } = await supabase.rpc("admin_listar_usuarios");
     if (error) toast.error(error.message);
     setLista(((data as Usuario[]) || []).slice().sort((a, b) => b.criado_em.localeCompare(a.criado_em)));
@@ -91,6 +91,37 @@ const AdminUsuarios = () => {
       toast.success(conceder ? "Papel concedido" : "Papel revogado");
       load();
     } catch (e: any) { toast.error(e.message); }
+  };
+
+  const excluirUsuario = async (u: Usuario) => {
+    if (!u.user_id || !u.conta_vinculada) {
+      toast.error("Este registro não possui uma conta de acesso vinculada para excluir.");
+      return;
+    }
+
+    if (u.papeis.includes("admin")) {
+      toast.warning("Antes de excluir um administrador, retire primeiro a autorização de Administrador usando “Revogar admin”.");
+      return;
+    }
+
+    const identificacao = u.email || u.nome || "este usuário";
+    const confirmar = window.confirm(
+      `Excluir a conta de acesso de ${identificacao}?\n\nO usuário perderá o login. Pets, TAGs e histórico já existentes serão preservados.`
+    );
+    if (!confirmar) return;
+
+    setExcluindo(u.user_id);
+    try {
+      const { error } = await supabase.rpc("admin_excluir_usuario", { p_user_id: u.user_id });
+      if (error) throw error;
+      toast.success("Conta de usuário excluída. O histórico relacionado foi preservado.");
+      if (detalhe?.user_id === u.user_id) setDetalhe(null);
+      await load();
+    } catch (e: any) {
+      toast.error(e.message || "Não foi possível excluir o usuário");
+    } finally {
+      setExcluindo(null);
+    }
   };
 
   const totais = useMemo(() => ({
@@ -218,6 +249,17 @@ const AdminUsuarios = () => {
                           </Button>
                         )
                       )}
+                      {u.conta_vinculada && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          disabled={excluindo === u.user_id}
+                          onClick={() => excluirUsuario(u)}
+                        >
+                          {excluindo === u.user_id ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Trash2 className="w-3 h-3 mr-1" />}
+                          Excluir
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -235,8 +277,7 @@ const AdminUsuarios = () => {
           <DialogHeader>
             <DialogTitle>{detalhe?.nome || "Usuário"}</DialogTitle>
             <DialogDescription>
-              Os papéis exibidos vêm de user_roles. Alterar esta tela não burla papéis nem regras de
-              acesso do banco.
+              Os papéis exibidos vêm de user_roles. Alterar esta tela não burla papéis nem regras de acesso do banco.
             </DialogDescription>
           </DialogHeader>
           {detalhe && (
