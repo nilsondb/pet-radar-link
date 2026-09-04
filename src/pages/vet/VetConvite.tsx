@@ -18,6 +18,8 @@ type Convite = {
   especialidade: string | null;
 };
 
+type PerfilForm = { nome: string; telefone: string; crmv: string; uf_crmv: string; clinica: string; especialidade: string };
+
 const VetConvite = () => {
   const [params] = useSearchParams();
   const token = params.get("token") || "";
@@ -28,18 +30,18 @@ const VetConvite = () => {
   const [convite, setConvite] = useState<Convite | null>(null);
   const [senha, setSenha] = useState("");
   const [modo, setModo] = useState<"cadastro" | "login">("cadastro");
-  const [form, setForm] = useState({ nome: "", telefone: "", crmv: "", uf_crmv: "", clinica: "", especialidade: "" });
+  const [form, setForm] = useState<PerfilForm>({ nome: "", telefone: "", crmv: "", uf_crmv: "", clinica: "", especialidade: "" });
 
-  const concluir = async () => {
-    if (!convite || !token) return;
+  const concluir = async (dados: PerfilForm) => {
+    if (!token) return;
     const { error } = await supabase.rpc("concluir_convite_veterinario", {
       p_token: token,
-      p_nome: form.nome.trim(),
-      p_telefone: form.telefone.trim() || null,
-      p_crmv: form.crmv.trim() || null,
-      p_uf_crmv: form.uf_crmv.trim() || null,
-      p_clinica: form.clinica.trim() || null,
-      p_especialidade: form.especialidade.trim() || null,
+      p_nome: dados.nome.trim(),
+      p_telefone: dados.telefone.trim() || null,
+      p_crmv: dados.crmv.trim() || null,
+      p_uf_crmv: dados.uf_crmv.trim() || null,
+      p_clinica: dados.clinica.trim() || null,
+      p_especialidade: dados.especialidade.trim() || null,
     });
     if (error) throw error;
     toast.success("Cadastro profissional concluído.");
@@ -61,23 +63,24 @@ const VetConvite = () => {
         return;
       }
       const c = row as Convite;
+      const dados: PerfilForm = {
+        nome: c.nome || "",
+        telefone: c.telefone || "",
+        crmv: c.crmv || "",
+        uf_crmv: c.uf_crmv || "",
+        clinica: c.clinica || "",
+        especialidade: c.especialidade || "",
+      };
       if (ativo) {
         setConvite(c);
-        setForm({
-          nome: c.nome || "",
-          telefone: c.telefone || "",
-          crmv: c.crmv || "",
-          uf_crmv: c.uf_crmv || "",
-          clinica: c.clinica || "",
-          especialidade: c.especialidade || "",
-        });
+        setForm(dados);
       }
 
       const user = await getUser();
       if (user && user.email?.toLowerCase() === c.email.toLowerCase()) {
         try {
           if (ativo) setSaving(true);
-          await concluir();
+          await concluir(dados);
           return;
         } catch (err: any) {
           toast.error(err.message || "Não foi possível concluir o convite.");
@@ -98,7 +101,7 @@ const VetConvite = () => {
     try {
       if (modo === "login") {
         await signIn(convite.email, senha);
-        await concluir();
+        await concluir(form);
         return;
       }
       const session = await signUp(
@@ -111,7 +114,7 @@ const VetConvite = () => {
         setConfirmar(true);
         return;
       }
-      await concluir();
+      await concluir(form);
     } catch (err: any) {
       toast.error(err.message || "Não foi possível concluir o cadastro profissional.");
     } finally {
@@ -119,57 +122,30 @@ const VetConvite = () => {
     }
   };
 
-  if (loading || saving) {
-    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
-  }
+  if (loading || saving) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
   if (!convite) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-secondary">
-        <div className="pet-card max-w-md text-center">
-          <ShieldAlert className="w-12 h-12 mx-auto text-destructive mb-3" />
-          <h1 className="text-xl font-bold">Convite inválido ou expirado</h1>
-          <p className="text-sm text-muted-foreground mt-2">Solicite um novo convite à Authera.</p>
-        </div>
-      </div>
-    );
+    return <div className="min-h-screen flex items-center justify-center p-4 bg-secondary"><div className="pet-card max-w-md text-center"><ShieldAlert className="w-12 h-12 mx-auto text-destructive mb-3" /><h1 className="text-xl font-bold">Convite inválido ou expirado</h1><p className="text-sm text-muted-foreground mt-2">Solicite um novo convite à Authera.</p></div></div>;
   }
 
   if (confirmar) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-secondary">
-        <div className="pet-card max-w-md text-center space-y-3">
-          <MailCheck className="w-12 h-12 mx-auto text-primary" />
-          <h1 className="text-xl font-bold">Confirme seu e-mail</h1>
-          <p className="text-sm text-muted-foreground">Depois de confirmar <strong>{convite.email}</strong>, você volta para este convite e o perfil profissional é liberado.</p>
-        </div>
-      </div>
-    );
+    return <div className="min-h-screen flex items-center justify-center p-4 bg-secondary"><div className="pet-card max-w-md text-center space-y-3"><MailCheck className="w-12 h-12 mx-auto text-primary" /><h1 className="text-xl font-bold">Confirme seu e-mail</h1><p className="text-sm text-muted-foreground">Depois de confirmar <strong>{convite.email}</strong>, você volta para este convite e o perfil profissional é liberado.</p></div></div>;
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-secondary">
       <div className="pet-card w-full max-w-md">
-        <div className="text-center mb-6">
-          <Stethoscope className="w-12 h-12 mx-auto text-primary mb-3" />
-          <h1 className="text-2xl font-bold text-primary">Convite Authera Pet Pro</h1>
-          <p className="text-sm text-muted-foreground">Sua solicitação foi aprovada. Crie o acesso profissional.</p>
-        </div>
+        <div className="text-center mb-6"><Stethoscope className="w-12 h-12 mx-auto text-primary mb-3" /><h1 className="text-2xl font-bold text-primary">Convite Authera Pet Pro</h1><p className="text-sm text-muted-foreground">Sua solicitação foi aprovada. Crie o acesso profissional.</p></div>
         <form onSubmit={enviar} className="space-y-3">
           <div><Label>E-mail aprovado</Label><Input value={convite.email} readOnly /></div>
           <div><Label>Senha *</Label><Input type="password" minLength={6} required value={senha} onChange={(e) => setSenha(e.target.value)} /></div>
           <div><Label>Nome completo *</Label><Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></div>
-          <div className="grid grid-cols-2 gap-3">
-            <div><Label>CRMV</Label><Input value={form.crmv} onChange={(e) => setForm({ ...form, crmv: e.target.value })} /></div>
-            <div><Label>UF</Label><Input maxLength={2} value={form.uf_crmv} onChange={(e) => setForm({ ...form, uf_crmv: e.target.value.toUpperCase() })} /></div>
-          </div>
+          <div className="grid grid-cols-2 gap-3"><div><Label>CRMV</Label><Input value={form.crmv} onChange={(e) => setForm({ ...form, crmv: e.target.value })} /></div><div><Label>UF</Label><Input maxLength={2} value={form.uf_crmv} onChange={(e) => setForm({ ...form, uf_crmv: e.target.value.toUpperCase() })} /></div></div>
           <div><Label>Telefone</Label><Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} /></div>
           <div><Label>Clínica</Label><Input value={form.clinica} onChange={(e) => setForm({ ...form, clinica: e.target.value })} /></div>
           <div><Label>Especialidade</Label><Input value={form.especialidade} onChange={(e) => setForm({ ...form, especialidade: e.target.value })} /></div>
           <Button type="submit" className="w-full" size="lg">{modo === "cadastro" ? "Criar conta profissional" : "Entrar e concluir convite"}</Button>
-          <Button type="button" variant="link" className="w-full" onClick={() => setModo(modo === "cadastro" ? "login" : "cadastro")}>
-            {modo === "cadastro" ? "Já tenho uma conta com este e-mail" : "Criar uma conta nova"}
-          </Button>
+          <Button type="button" variant="link" className="w-full" onClick={() => setModo(modo === "cadastro" ? "login" : "cadastro")}>{modo === "cadastro" ? "Já tenho uma conta com este e-mail" : "Criar uma conta nova"}</Button>
         </form>
       </div>
     </div>
