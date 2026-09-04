@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { publicPetPhotoUrl } from "@/lib/petUtils";
 
 export type VinculoStatus = "pending" | "active" | "revoked";
 
@@ -26,7 +27,27 @@ export type PacienteVinculo = {
 };
 
 const SELECT =
-  "id, pet_id, veterinarian_id, status, access_level, requested_at, authorized_at, pet:pets(id, nome_pet, foto_url, raca, especie, sexo, data_nascimento, status_perdido, nome_dono, telefone, tutor_id)";
+  "id, pet_id, veterinarian_id, status, access_level, requested_at, authorized_at, pet:pets(id, nome, foto_path, raca, especie, sexo, data_nascimento, status_perdido, tutor_id, tutor:tutores(nome, telefone))";
+
+function mapPaciente(row: any): PacienteVinculo {
+  const pet = row.pet
+    ? {
+        id: row.pet.id,
+        nome_pet: row.pet.nome ?? null,
+        foto_url: publicPetPhotoUrl(row.pet.foto_path),
+        raca: row.pet.raca ?? null,
+        especie: row.pet.especie ?? null,
+        sexo: row.pet.sexo ?? null,
+        data_nascimento: row.pet.data_nascimento ?? null,
+        status_perdido: !!row.pet.status_perdido,
+        nome_dono: row.pet.tutor?.nome ?? null,
+        telefone: row.pet.tutor?.telefone ?? null,
+        tutor_id: row.pet.tutor_id ?? null,
+      }
+    : null;
+
+  return { ...row, pet } as PacienteVinculo;
+}
 
 export async function fetchPacientes(vetId: string, status?: VinculoStatus) {
   let q = supabase
@@ -36,7 +57,7 @@ export async function fetchPacientes(vetId: string, status?: VinculoStatus) {
     .order("created_at", { ascending: false });
   if (status) q = q.eq("status", status);
   const { data } = await q;
-  return (data as unknown as PacienteVinculo[]) || [];
+  return (data || []).map(mapPaciente);
 }
 
 export async function fetchVinculosDoPet(petId: string) {
@@ -76,14 +97,13 @@ export async function solicitarAcesso(petId: string, vetId: string, access_level
 }
 
 export async function atualizarVinculo(id: string, status: VinculoStatus) {
-  const patch: { status: string; authorized_at?: string; revoked_at?: string } = { status };
+  const patch: { status: VinculoStatus; authorized_at?: string; revoked_at?: string } = { status };
   if (status === "active") patch.authorized_at = new Date().toISOString();
   if (status === "revoked") patch.revoked_at = new Date().toISOString();
   const { error } = await supabase.from("pet_veterinarians").update(patch).eq("id", id);
   if (error) throw error;
 }
 
-/** Verifica se o veterinário tem vínculo ativo com o pet (checagem no banco). */
 export async function temAcessoAtivo(petId: string, vetId: string) {
   const { data } = await supabase
     .from("pet_veterinarians")
@@ -95,7 +115,6 @@ export async function temAcessoAtivo(petId: string, vetId: string) {
   return data ? { ok: true, access_level: data.access_level } : { ok: false, access_level: null };
 }
 
-/** Busca mínima de identificação de um pet pelo UID público da TAG (sem dados clínicos). */
 export type PetPorTag = {
   pet_id: string;
   nome_pet: string | null;
@@ -115,7 +134,6 @@ export async function buscarPetPorTag(uid: string): Promise<PetPorTag | null> {
   return (row as PetPorTag) ?? null;
 }
 
-/** Cadastro clínico de paciente que ainda não usa TAG. O tutor é reaproveitado no servidor. */
 export async function criarPacienteSemTag(dados: {
   nome_pet: string;
   especie?: string;
@@ -144,12 +162,11 @@ export async function criarPacienteSemTag(dados: {
   return data as string;
 }
 
-/** Solicitação de TAG para um paciente já existente. O token nunca é exposto ao veterinário. */
 export async function solicitarTag(petId: string, vetId: string, observacoes?: string) {
   const { error } = await supabase.from("tag_solicitacoes").insert({
     pet_id: petId,
     veterinarian_id: vetId,
-    status: "pendente",
+    status: "pending",
     observacoes: observacoes || null,
   });
   if (error) throw error;
@@ -164,13 +181,12 @@ export async function fetchSolicitacoesTagDoVet(vetId: string) {
   return data || [];
 }
 
-/** TAG ativa do pet (quando visível pela RLS). */
 export async function fetchTagAtivaDoPet(petId: string) {
   const { data } = await supabase
     .from("tags")
     .select("uid_publico, status, activated_at")
     .eq("pet_id", petId)
-    .eq("status", "ativa")
+    .eq("status", "active")
     .maybeSingle();
   return data;
 }
