@@ -19,7 +19,6 @@ import Vacinas from "./pages/Vacinas.tsx";
 import Vermifugacao from "./pages/Vermifugacao.tsx";
 import Saude from "./pages/Saude.tsx";
 import Localizacoes from "./pages/Localizacoes.tsx";
-import AssistenteIA from "./pages/AssistenteIA.tsx";
 import HistoricoInteligente from "./pages/HistoricoInteligente.tsx";
 import Veterinarios from "./pages/Veterinarios.tsx";
 
@@ -133,15 +132,6 @@ const App = () => (
             element={
               <TutorGate>
                 <Localizacoes />
-              </TutorGate>
-            }
-          />
-
-          <Route
-            path="/assistente-ia"
-            element={
-              <TutorGate>
-                <AssistenteIA />
               </TutorGate>
             }
           />
