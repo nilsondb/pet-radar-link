@@ -932,6 +932,17 @@ export type Database = {
         }
         Returns: string
       }
+      concluir_cadastro_veterinario: {
+        Args: {
+          p_clinica?: string
+          p_crmv?: string
+          p_especialidade?: string
+          p_nome: string
+          p_telefone?: string
+          p_uf_crmv?: string
+        }
+        Returns: string
+      }
       criar_perfil_veterinario: {
         Args: {
           p_clinica?: string
