@@ -36,6 +36,17 @@ export const TutorGate = ({ children }: { children: ReactNode }) => {
         await supabase.rpc("reivindicar_pet", { p_id: id, p_token: token });
       }
     }
+    // O token da tag não é credencial de sessão: fora da ativação ele sai da URL.
+    if (token && window.location.pathname !== "/setup") {
+      const limpo = new URLSearchParams(window.location.search);
+      limpo.delete("token");
+      const qs = limpo.toString();
+      window.history.replaceState(
+        null,
+        "",
+        `${window.location.pathname}${qs ? `?${qs}` : ""}`
+      );
+    }
     setEstado("ok");
   }, [id, token]);
 

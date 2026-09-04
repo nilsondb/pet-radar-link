@@ -103,7 +103,33 @@ export async function ensureTutor(dados: {
   return data?.id ?? null;
 }
 
-/** Monta a querystring padrão de acesso privado a um pet. */
-export function petQuery(id: string, token?: string | null) {
-  return token ? `?id=${id}&token=${token}` : `?id=${id}`;
+/** Monta a querystring padrão de acesso privado a um pet (sem token NFC). */
+export function petQuery(id: string) {
+  return `?id=${id}`;
+}
+
+/** id do tutor da sessão autenticada (resolvido no servidor por auth.uid()). */
+export async function fetchMeuTutorId(): Promise<string | null> {
+  const { data, error } = await supabase.rpc("meu_tutor_id");
+  if (error) return null;
+  return (data as string | null) ?? null;
+}
+
+/** Tutor da conta autenticada, respeitando a RLS. */
+export async function fetchMeuTutor(): Promise<Tutor | null> {
+  const tutorId = await fetchMeuTutorId();
+  if (!tutorId) return null;
+  return fetchTutor(tutorId);
+}
+
+/** Pets vinculados ao tutor da conta autenticada. */
+export async function fetchMeusPets(): Promise<PetResumo[]> {
+  const tutorId = await fetchMeuTutorId();
+  if (!tutorId) return [];
+  const { data } = await supabase
+    .from("pets")
+    .select(PET_FIELDS)
+    .eq("tutor_id", tutorId)
+    .order("created_at", { ascending: true });
+  return (data as PetResumo[]) || [];
 }

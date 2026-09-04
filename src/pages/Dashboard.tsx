@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useIdFromUrl, useTokenFromUrl } from "@/lib/petUtils";
-import { fetchPetsDoTutor } from "@/lib/tutorUtils";
+import { useIdFromUrl } from "@/lib/petUtils";
 import { PetHeader } from "@/components/PetHeader";
 import { PetSidebar } from "@/components/PetSidebar";
 import { PetSwitcher } from "@/components/PetSwitcher";
@@ -13,7 +12,6 @@ import { toast } from "sonner";
 
 const Dashboard = () => {
   const id = useIdFromUrl();
-  const token = useTokenFromUrl();
   const navigate = useNavigate();
   const [pet, setPet] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -24,19 +22,8 @@ const Dashboard = () => {
     if (!id) return;
     const { data } = await supabase.from("pets").select("*").eq("id", id).maybeSingle();
     if (!data || !data.status_ativado) {
-      const qs = token ? `?id=${id}&token=${token}` : `?id=${id}`;
-      navigate(`/setup${qs}`, { replace: true });
+      navigate("/meus-pets", { replace: true });
       return;
-    }
-
-    // Tutor com mais de um pet: mostrar primeiro a lista "Meus Pets"
-    const jaEscolheu = new URLSearchParams(window.location.search).get("pet");
-    if (!jaEscolheu && token && data.tutor_id) {
-      const irmaos = await fetchPetsDoTutor(data.tutor_id, id);
-      if (irmaos.filter((p) => p.status_ativado).length > 1) {
-        navigate(`/meus-pets?id=${id}&token=${token}`, { replace: true });
-        return;
-      }
     }
 
     setPet(data);
@@ -47,7 +34,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!id) {
-      navigate("/setup");
+      navigate("/meus-pets", { replace: true });
       return;
     }
     load();
@@ -80,11 +67,11 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen">
-      <PetSidebar id={id!} token={token} open={menuOpen} onClose={() => setMenuOpen(false)} />
+      <PetSidebar id={id!} open={menuOpen} onClose={() => setMenuOpen(false)} />
       <PetHeader title="Dashboard" onMenuClick={() => setMenuOpen(true)} />
 
       <main className="max-w-2xl mx-auto p-4 space-y-4">
-        <PetSwitcher petId={id!} token={token} />
+        <PetSwitcher petId={id!} />
         <div className="pet-card flex flex-col items-center text-center">
           {pet.foto_url ? (
             <img src={pet.foto_url} alt={pet.nome_pet}

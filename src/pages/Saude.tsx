@@ -338,7 +338,7 @@ const Saude = () => {
 
   return (
     <div className="min-h-screen">
-      <PetSidebar id={id!} token={new URLSearchParams(window.location.search).get("token")} open={menuOpen} onClose={() => setMenuOpen(false)} />
+      <PetSidebar id={id!} open={menuOpen} onClose={() => setMenuOpen(false)} />
       <PetHeader title="Saúde do Pet" onMenuClick={() => setMenuOpen(true)} />
 
       <main className="max-w-2xl mx-auto p-4">

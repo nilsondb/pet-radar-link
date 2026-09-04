@@ -1,17 +1,19 @@
 import { Pencil, Siren, LogOut, X, Syringe, Bug, HeartPulse, MapPin, Bot, Brain, Home, Dog, Stethoscope } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { signOut } from "@/lib/auth";
 
 interface Props {
   id: string;
+  /** @deprecated o token NFC não é mais propagado nas rotas privadas */
   token?: string | null;
   open: boolean;
   onClose: () => void;
 }
 
-export const PetSidebar = ({ id, token, open, onClose }: Props) => {
+export const PetSidebar = ({ id, open, onClose }: Props) => {
   const navigate = useNavigate();
-  const qs = token ? `?id=${id}&token=${token}` : `?id=${id}`;
+  const qs = `?id=${id}`;
 
   const items = [
     { to: `/dashboard${qs}`, label: "Dashboard", icon: Home },
@@ -26,9 +28,10 @@ export const PetSidebar = ({ id, token, open, onClose }: Props) => {
     { to: `/assistente-ia${qs}`, label: "Assistente IA", icon: Bot },
   ];
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     onClose();
-    navigate(`/setup?id=${id}`);
+    await signOut();
+    navigate("/", { replace: true });
   };
 
   return (
