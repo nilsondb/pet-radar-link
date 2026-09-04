@@ -55,6 +55,13 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        authera: {
+          navy: "hsl(var(--navy))",
+          "navy-deep": "hsl(var(--navy-deep))",
+          blue: "hsl(var(--tech-blue))",
+          cyan: "hsl(var(--tech-cyan))",
+          violet: "hsl(var(--tech-violet))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
