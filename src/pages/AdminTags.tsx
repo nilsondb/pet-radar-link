@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { Copy, Loader2, Nfc, Search } from "lucide-react";
+import { Copy, ExternalLink, Loader2, Nfc, Search } from "lucide-react";
 import { toast } from "sonner";
 
 type TagStatus = "stock" | "active" | "inactive" | "replaced";
@@ -322,28 +322,55 @@ const AdminTags = () => {
             <Button onClick={preparar} disabled={salvando || !!tokenGerado} className="w-full">
               {salvando && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Preparar TAG
             </Button>
-            {tokenGerado && (
-              <div className="p-3 rounded-xl bg-muted text-sm space-y-2">
-                <p className="font-medium">Código de ativação — exibição única</p>
-                <p className="font-mono break-all">{tokenGerado}</p>
-                <p className="text-xs text-muted-foreground">Validade: 7 dias. Depois de fechar esta janela o código não poderá ser recuperado.</p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={async () => {
-                    try {
-                      const uid = prep.uid.trim().toUpperCase();
-                      await copiarTexto(linkAtivacao(uid, tokenGerado));
-                      toast.success("Link de ativação copiado");
-                    } catch (e: any) {
-                      toast.error(e.message || "Não foi possível copiar o link de ativação");
-                    }
-                  }}
-                >
-                  <Copy className="w-3 h-3 mr-1" /> Copiar link para o tutor
-                </Button>
-              </div>
-            )}
+            {tokenGerado && (() => {
+              const uid = prep.uid.trim().toUpperCase();
+              const url = linkAtivacao(uid, tokenGerado);
+              return (
+                <div className="p-3 rounded-xl bg-muted text-sm space-y-3">
+                  <div>
+                    <p className="font-medium">Código de ativação — exibição única</p>
+                    <p className="font-mono break-all mt-1">{tokenGerado}</p>
+                  </div>
+
+                  <div>
+                    <Label>Link de ativação do tutor</Label>
+                    <Input
+                      value={url}
+                      readOnly
+                      onFocus={(e) => e.currentTarget.select()}
+                      className="font-mono text-xs mt-1"
+                    />
+                  </div>
+
+                  <p className="text-xs text-muted-foreground">
+                    Validade: 7 dias. Depois de fechar esta janela o código não poderá ser recuperado.
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={async () => {
+                        try {
+                          await copiarTexto(url);
+                          toast.success("Link de ativação copiado");
+                        } catch (e: any) {
+                          toast.error(e.message || "Não foi possível copiar o link de ativação");
+                        }
+                      }}
+                    >
+                      <Copy className="w-3 h-3 mr-1" /> Copiar link
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
+                    >
+                      <ExternalLink className="w-3 h-3 mr-1" /> Abrir ativação
+                    </Button>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </DialogContent>
       </Dialog>
