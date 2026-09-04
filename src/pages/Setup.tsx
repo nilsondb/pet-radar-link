@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { getUser, signIn, signUp } from "@/lib/auth";
+import { getUser, signIn, signOut } from "@/lib/auth";
 import { useIdFromUrl, useTokenFromUrl } from "@/lib/petUtils";
 import { fetchMeuTutor } from "@/lib/tutorUtils";
 import { PetHeader } from "@/components/PetHeader";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, MailCheck, PawPrint, ShieldAlert } from "lucide-react";
+import { Loader2, PawPrint, ShieldAlert } from "lucide-react";
 
 type FormState = {
   email: string;
@@ -41,12 +41,11 @@ const Setup = () => {
   const [checking, setChecking] = useState(true);
   const [tokenValid, setTokenValid] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [confirmar, setConfirmar] = useState(false);
-  const [autenticado, setAutenticado] = useState(false);
   const [modo, setModo] = useState<"cadastro" | "login">("cadastro");
   const [form, setForm] = useState<FormState>(vazio);
+  const [contaAtual, setContaAtual] = useState<string | null>(null);
 
-  const redirectAtual = useMemo(() => window.location.href, []);
+  const uid = useMemo(() => (id || "").trim().toUpperCase(), [id]);
 
   const ativar = async (dados: FormState) => {
     if (!id || !token) return;
@@ -66,14 +65,14 @@ const Setup = () => {
     if (error) throw error;
     if (!petIdAtivado) throw new Error("Não foi possível identificar o pet ativado.");
 
-    toast.success("Conta, tutor, pet e TAG ativados com sucesso! 🐾");
+    toast.success("Tutor, pet e TAG ativados com sucesso! 🐾");
     navigate(`/dashboard?id=${petIdAtivado as string}`, { replace: true });
   };
 
   useEffect(() => {
     let ativo = true;
 
-    const carregar = async () => {
+    (async () => {
       if (!id) {
         if (ativo) setChecking(false);
         return;
@@ -90,62 +89,24 @@ const Setup = () => {
       if (ativo) setTokenValid(!!token);
 
       const user = await getUser();
-      if (!user) {
-        if (ativo) {
-          setAutenticado(false);
-          setChecking(false);
-        }
-        return;
-      }
-
-      if (ativo) setAutenticado(true);
-
-      const tutor = await fetchMeuTutor();
-      const pending = (user.user_metadata?.authera_pet_ativacao || null) as Partial<FormState> | null;
-
-      const preenchido: FormState = {
-        email: user.email || "",
-        senha: "",
-        nome_dono: tutor?.nome || pending?.nome_dono || "",
-        telefone: tutor?.telefone || pending?.telefone || "",
-        endereco: tutor?.endereco || pending?.endereco || "",
-        nome_pet: pending?.nome_pet || "",
-        data_nascimento: pending?.data_nascimento || "",
-        peso: pending?.peso || "",
-      };
-
-      if (ativo) setForm(preenchido);
-
-      const podeConcluirAutomatico =
-        !!pending &&
-        user.user_metadata?.tag_uid === id &&
-        !!pending.nome_dono &&
-        !!pending.telefone &&
-        !!pending.nome_pet;
-
-      if (podeConcluirAutomatico) {
-        try {
-          if (ativo) setSaving(true);
-          await ativar(preenchido);
-          return;
-        } catch (err: any) {
-          toast.error(err.message || "Não foi possível concluir a ativação automaticamente.");
-        } finally {
-          if (ativo) setSaving(false);
+      if (user && ativo) {
+        setContaAtual(user.email || null);
+        const tutor = await fetchMeuTutor();
+        if (tutor) {
+          setForm((f) => ({
+            ...f,
+            email: user.email || "",
+            nome_dono: tutor.nome || "",
+            telefone: tutor.telefone || "",
+            endereco: tutor.endereco || "",
+          }));
         }
       }
 
       if (ativo) setChecking(false);
-    };
+    })();
 
-    carregar();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => carregar());
-
-    return () => {
-      ativo = false;
-      sub.subscription.unsubscribe();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => { ativo = false; };
   }, [id, token, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -155,44 +116,33 @@ const Setup = () => {
     if (!form.nome_dono.trim() || !form.telefone.trim() || !form.nome_pet.trim()) {
       return toast.error("Informe nome do tutor, telefone e nome do pet.");
     }
+    if (!form.email.trim() || !form.senha) {
+      return toast.error("Informe e-mail e senha.");
+    }
 
     setSaving(true);
     try {
-      if (!autenticado) {
-        if (!form.email.trim() || !form.senha) throw new Error("Informe e-mail e senha.");
+      if (modo === "cadastro") {
+        // O link da TAG é a autorização de entrada. Qualquer sessão já aberta no navegador
+        // não pode ser reaproveitada silenciosamente para criar o novo tutor.
+        if (await getUser()) await signOut();
 
-        if (modo === "login") {
-          await signIn(form.email, form.senha);
-          setAutenticado(true);
-          await ativar(form);
-          return;
-        }
-
-        const session = await signUp(
-          form.email,
-          form.senha,
-          {
-            tipo: "tutor",
-            origem: "ativacao_tag",
-            tag_uid: id,
-            authera_pet_ativacao: {
-              nome_dono: form.nome_dono.trim(),
-              telefone: form.telefone.trim(),
-              endereco: form.endereco.trim(),
-              nome_pet: form.nome_pet.trim(),
-              data_nascimento: form.data_nascimento,
-              peso: form.peso,
-            },
+        const { data, error } = await supabase.functions.invoke("criar-tutor-por-tag", {
+          body: {
+            email: form.email.trim().toLowerCase(),
+            senha: form.senha,
+            tag_uid: uid,
+            token,
           },
-          redirectAtual
-        );
+        });
 
-        if (!session) {
-          setConfirmar(true);
-          return;
-        }
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
 
-        setAutenticado(true);
+        await signIn(form.email, form.senha);
+      } else {
+        if (await getUser()) await signOut();
+        await signIn(form.email, form.senha);
       }
 
       await ativar(form);
@@ -219,7 +169,7 @@ const Setup = () => {
     return (
       <div className="min-h-screen flex flex-col gap-3 items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">{saving ? "Concluindo sua ativação..." : "Validando seu convite..."}</p>
+        <p className="text-sm text-muted-foreground">{saving ? "Criando acesso e ativando sua TAG..." : "Validando seu convite..."}</p>
       </div>
     );
   }
@@ -236,20 +186,6 @@ const Setup = () => {
     );
   }
 
-  if (confirmar) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-secondary">
-        <div className="pet-card w-full max-w-md text-center space-y-4">
-          <MailCheck className="w-12 h-12 mx-auto text-primary" />
-          <h1 className="text-xl font-bold">Confirme seu e-mail</h1>
-          <p className="text-sm text-muted-foreground">
-            Enviamos a confirmação para <strong>{form.email}</strong>. Depois de confirmar, você volta para esta mesma TAG e o cadastro do tutor + primeiro pet é concluído.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen">
       <PetHeader title="Ativar Authera Pet" />
@@ -258,28 +194,36 @@ const Setup = () => {
           <div className="mb-5">
             <p className="text-sm text-muted-foreground">TAG <span className="font-mono font-medium">#{id}</span></p>
             <h1 className="text-2xl font-bold mt-1">Crie seu acesso e cadastre seu primeiro pet</h1>
-            <p className="text-sm text-muted-foreground mt-1">Tudo é concluído por este convite. Não existe cadastro público separado de tutor.</p>
+            <p className="text-sm text-muted-foreground mt-1">Este link autorizado cria seu acesso, seu perfil de tutor e o primeiro pet em um único fluxo.</p>
+            {contaAtual && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Há uma sessão aberta como <strong>{contaAtual}</strong>. Ela não será usada automaticamente.
+              </p>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {!autenticado && (
-              <section className="space-y-3 border-b pb-5">
-                <div className="flex items-center justify-between gap-3">
-                  <h2 className="font-semibold">Seu acesso</h2>
-                  <Button type="button" variant="link" className="px-0" onClick={() => setModo(modo === "cadastro" ? "login" : "cadastro")}>
-                    {modo === "cadastro" ? "Já tenho conta" : "Criar conta nova"}
-                  </Button>
-                </div>
-                <div>
-                  <Label htmlFor="email">E-mail *</Label>
-                  <Input id="email" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-                </div>
-                <div>
-                  <Label htmlFor="senha">Senha *</Label>
-                  <Input id="senha" type="password" minLength={6} required value={form.senha} onChange={(e) => setForm({ ...form, senha: e.target.value })} />
-                </div>
-              </section>
-            )}
+            <section className="space-y-3 border-b pb-5">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="font-semibold">Seu acesso</h2>
+                <Button type="button" variant="link" className="px-0" onClick={() => setModo(modo === "cadastro" ? "login" : "cadastro")}>
+                  {modo === "cadastro" ? "Já tenho conta" : "Criar conta nova"}
+                </Button>
+              </div>
+              <div>
+                <Label htmlFor="email">E-mail *</Label>
+                <Input id="email" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              </div>
+              <div>
+                <Label htmlFor="senha">Senha *</Label>
+                <Input id="senha" type="password" minLength={6} required value={form.senha} onChange={(e) => setForm({ ...form, senha: e.target.value })} />
+              </div>
+              {modo === "cadastro" && (
+                <p className="text-xs text-muted-foreground">
+                  Não há confirmação por e-mail neste fluxo: o próprio convite da TAG é a autorização de cadastro.
+                </p>
+              )}
+            </section>
 
             <section className="space-y-3 border-b pb-5">
               <h2 className="font-semibold">Dados do tutor</h2>
@@ -315,7 +259,7 @@ const Setup = () => {
             </section>
 
             <Button type="submit" className="w-full" size="lg" disabled={saving}>
-              {modo === "login" || autenticado ? "Entrar e ativar TAG" : "Criar conta e ativar TAG"}
+              {modo === "login" ? "Entrar e ativar TAG" : "Criar conta e ativar TAG"}
             </Button>
           </form>
         </div>
