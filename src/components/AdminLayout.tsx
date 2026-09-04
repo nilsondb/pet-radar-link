@@ -1,7 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { adminLogout, adminSessionAtual, AdminSession } from "@/lib/adminAuth";
-import { LayoutDashboard, Dog, Users, DollarSign, Settings, LogOut, UserCircle, Activity, Loader2, Nfc } from "lucide-react";
+import { LayoutDashboard, Dog, Users, DollarSign, Settings, LogOut, UserCircle, Activity, Loader2, Nfc, Stethoscope } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
@@ -9,6 +9,7 @@ const items = [
   { to: "/admin/pets", label: "Pets", icon: Dog },
   { to: "/admin/usuarios", label: "Usuários", icon: Users },
   { to: "/admin/tags", label: "TAGs", icon: Nfc },
+  { to: "/admin/veterinarios", label: "Veterinários", icon: Stethoscope },
   { to: "/admin/financeiro", label: "Financeiro", icon: DollarSign },
   { to: "/admin/saas-center", label: "SaaS Center", icon: Activity },
   { to: "/admin/configuracoes", label: "Configurações", icon: Settings },
@@ -22,7 +23,6 @@ export const AdminLayout = ({ children, title }: { children: ReactNode; title: s
 
   useEffect(() => {
     (async () => {
-      // Autorização verificada no banco (sessão Supabase + papel admin), nunca no localStorage
       const s = await adminSessionAtual();
       if (!s) {
         navigate("/admin/login", { replace: true });
@@ -64,27 +64,20 @@ export const AdminLayout = ({ children, title }: { children: ReactNode; title: s
               className={({ isActive }) =>
                 cn(
                   "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition",
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-muted text-foreground"
+                  isActive ? "bg-primary text-primary-foreground" : "hover:bg-muted text-foreground"
                 )
               }
             >
               <Icon className="w-4 h-4" /> {label}
             </NavLink>
           ))}
-          <button
-            onClick={sair}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-destructive/10 text-destructive"
-          >
+          <button onClick={sair} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-destructive/10 text-destructive">
             <LogOut className="w-4 h-4" /> Sair
           </button>
         </nav>
       </aside>
       <main className="flex-1 overflow-auto">
-        <header className="bg-card border-b px-6 py-4">
-          <h2 className="text-xl font-bold">{title}</h2>
-        </header>
+        <header className="bg-card border-b px-6 py-4"><h2 className="text-xl font-bold">{title}</h2></header>
         <div className="p-6">{children}</div>
       </main>
     </div>
