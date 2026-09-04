@@ -161,7 +161,7 @@ const VetVacinacao = () => {
             <SelectTrigger><SelectValue placeholder="Selecione o paciente" /></SelectTrigger>
             <SelectContent>
               {pacientes.map((p) => (
-                <SelectItem key={p.pet_id} value={p.pet_id}>{p.pet?.nome_pet || p.pet_id}</SelectItem>
+                <SelectItem key={p.pet_id} value={p.pet_id}>{p.pet?.nome || p.pet_id}</SelectItem>
               ))}
             </SelectContent>
           </Select>
