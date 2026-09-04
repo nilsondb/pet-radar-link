@@ -49,12 +49,9 @@ Deno.serve(async (req: Request) => {
     if (petR.error) return json({ error: "Falha ao consultar o pet" }, 500);
     if (!petR.data) return json({ error: "Pet não encontrado ou acesso não autorizado" }, 404);
 
-    if (!aiUrl) {
-      return json({
-        error: "Motor Authera IA ainda não configurado",
-        code: "AUTHERA_AI_NOT_CONFIGURED",
-      }, 503);
-    }
+    await sb.from("ai_usage_events").insert({ user_id: userData.user.id, pet_id, feature: "summary", status: "requested" });
+
+    if (!aiUrl) return json({ error: "Motor Authera IA ainda não configurado", code: "AUTHERA_AI_NOT_CONFIGURED" }, 503);
 
     const contexto = {
       pet: petR.data,
@@ -68,28 +65,19 @@ Deno.serve(async (req: Request) => {
 
     const aiRes = await fetch(`${aiUrl.replace(/\/$/, "")}/v1/pet/summary`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(aiToken ? { Authorization: `Bearer ${aiToken}` } : {}),
-      },
-      body: JSON.stringify({
-        pet_id,
-        user_id: userData.user.id,
-        contexto,
-      }),
+      headers: { "Content-Type": "application/json", ...(aiToken ? { Authorization: `Bearer ${aiToken}` } : {}) },
+      body: JSON.stringify({ pet_id, user_id: userData.user.id, contexto }),
     });
 
     if (!aiRes.ok) {
       const detail = await aiRes.text().catch(() => "");
       console.error("AUTHERA_AI summary error", aiRes.status, detail.slice(0, 500));
+      await sb.from("ai_usage_events").insert({ user_id: userData.user.id, pet_id, feature: "summary", status: "error" });
       return json({ error: "Motor Authera IA indisponível" }, 502);
     }
 
     const aiData = await aiRes.json();
-    const score = ["verde", "amarelo", "vermelho"].includes(aiData?.score_saude)
-      ? aiData.score_saude
-      : "amarelo";
-
+    const score = ["verde", "amarelo", "vermelho"].includes(aiData?.score_saude) ? aiData.score_saude : "amarelo";
     const resumo = typeof aiData?.resumo === "string" ? aiData.resumo : "Resumo indisponível.";
     const alertas = Array.isArray(aiData?.alertas) ? aiData.alertas.slice(0, 20) : [];
     const recomendacoes = Array.isArray(aiData?.recomendacoes) ? aiData.recomendacoes.slice(0, 20) : [];
@@ -102,9 +90,11 @@ Deno.serve(async (req: Request) => {
 
     if (saveError) {
       console.error("pet_resumos_ia insert error", saveError.message);
+      await sb.from("ai_usage_events").insert({ user_id: userData.user.id, pet_id, feature: "summary", status: "error" });
       return json({ error: "Análise gerada, mas não foi possível salvar o resumo" }, 500);
     }
 
+    await sb.from("ai_usage_events").insert({ user_id: userData.user.id, pet_id, feature: "summary", status: "success" });
     return json({ resumo: salvo });
   } catch (error) {
     console.error("ia-resumo-pet error", error);
