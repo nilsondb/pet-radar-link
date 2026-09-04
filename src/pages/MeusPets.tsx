@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { calcularIdade } from "@/lib/petUtils";
-import { fetchMeuTutor, fetchMeusPets, petQuery, type PetResumo, type Tutor } from "@/lib/tutorUtils";
+import { ativarTagParaPet, fetchMeuTutor, fetchMeusPets, petQuery, type PetResumo, type Tutor } from "@/lib/tutorUtils";
 import { PetHeader } from "@/components/PetHeader";
 import { PetSidebar } from "@/components/PetSidebar";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,13 @@ const MeusPets = () => {
   const [novoToken, setNovoToken] = useState("");
   const [dialogAberto, setDialogAberto] = useState(false);
 
+  // vinculação de TAG a um pet que já existe (TAG nova, perdida ou substituída)
+  const params = new URLSearchParams(window.location.search);
+  const [tagUid, setTagUid] = useState(params.get("tag") || "");
+  const [tagCodigo, setTagCodigo] = useState(params.get("codigo") || "");
+  const [tagOpen, setTagOpen] = useState(!!(params.get("tag") && params.get("codigo")));
+  const [vinculando, setVinculando] = useState(false);
+
   useEffect(() => {
     (async () => {
       const [t, lista] = await Promise.all([fetchMeuTutor(), fetchMeusPets()]);
@@ -37,6 +44,22 @@ const MeusPets = () => {
       setLoading(false);
     })();
   }, []);
+
+  const vincularTag = async () => {
+    if (!tagUid.trim() || !tagCodigo.trim()) return toast.error("Informe a TAG e o código de ativação.");
+    setVinculando(true);
+    try {
+      // O servidor valida o código e vincula a TAG ao pet existente, sem criar novo pet.
+      const petId = await ativarTagParaPet(tagUid, tagCodigo);
+      toast.success("TAG vinculada ao seu pet. O histórico foi preservado. 🐾");
+      setTagOpen(false);
+      navigate(`/dashboard?id=${petId}`);
+    } catch (e: any) {
+      toast.error(e.message || "Não foi possível vincular a TAG");
+    } finally {
+      setVinculando(false);
+    }
+  };
 
   const irParaAtivacao = () => {
     const tagId = novaTag.trim().toUpperCase();
@@ -141,10 +164,40 @@ const MeusPets = () => {
         )}
 
         {pets.length > 0 && (
-          <Button variant="outline" size="lg" className="w-full" onClick={() => setDialogAberto(true)}>
-            <Plus className="w-4 h-4 mr-1" /> Adicionar outro pet
-          </Button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Button variant="outline" size="lg" onClick={() => setDialogAberto(true)}>
+              <Plus className="w-4 h-4 mr-1" /> Adicionar outro pet
+            </Button>
+            <Button variant="outline" size="lg" onClick={() => setTagOpen(true)}>
+              <Nfc className="w-4 h-4 mr-1" /> Vincular TAG a um pet existente
+            </Button>
+          </div>
         )}
+
+        <Dialog open={tagOpen} onOpenChange={setTagOpen}>
+          <DialogContent className="bg-background">
+            <DialogHeader>
+              <DialogTitle>Vincular TAG a um pet existente</DialogTitle>
+              <DialogDescription>
+                Use esta opção quando o pet já está cadastrado e recebeu uma TAG nova ou de
+                substituição. O pet e todo o histórico são preservados.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <Label>Identificação da TAG</Label>
+                <Input value={tagUid} onChange={(e) => setTagUid(e.target.value)} placeholder="Ex: 9YUY9X" />
+              </div>
+              <div>
+                <Label>Código de ativação</Label>
+                <Input value={tagCodigo} onChange={(e) => setTagCodigo(e.target.value)} placeholder="Código recebido" />
+              </div>
+              <Button onClick={vincularTag} disabled={vinculando} className="w-full">
+                {vinculando && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Vincular TAG
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={dialogAberto} onOpenChange={setDialogAberto}>
           <DialogContent className="bg-background">

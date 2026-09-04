@@ -1,4 +1,4 @@
-import { Pencil, Siren, LogOut, X, Syringe, Bug, HeartPulse, MapPin, Bot, Brain, Home, Dog, Stethoscope } from "lucide-react";
+import { Pencil, Siren, LogOut, X, Syringe, Bug, HeartPulse, MapPin, Bot, Brain, Home, Dog } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/lib/auth";
@@ -23,7 +23,6 @@ export const PetSidebar = ({ id, open, onClose }: Props) => {
     { to: `/vermifugacao${qs}`, label: "Vermifugação", icon: Bug },
     { to: `/saude${qs}`, label: "Saúde do Pet", icon: HeartPulse },
     { to: `/localizacoes${qs}`, label: "Localizações", icon: MapPin },
-    { to: `/veterinarios${qs}`, label: "Veterinários", icon: Stethoscope },
     { to: `/historico${qs}`, label: "Histórico Inteligente", icon: Brain },
     { to: `/assistente-ia${qs}`, label: "Assistente IA", icon: Bot },
   ];

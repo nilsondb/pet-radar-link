@@ -28,7 +28,13 @@ const PetPublic = () => {
       return;
     }
     (async () => {
-      const { data } = await supabase.rpc("pet_publico", { p_id: id });
+      // A TAG identifica, mas não é o pet: quando o UID não é o próprio id do pet
+      // (TAG nova ou substituída), o servidor resolve qual pet ela aponta.
+      let petId = id;
+      const { data: resolvido } = await supabase.rpc("resolver_tag_publica", { p_uid: id });
+      if (resolvido) petId = resolvido as string;
+
+      const { data } = await supabase.rpc("pet_publico", { p_id: petId });
       const visible = Array.isArray(data) ? data[0] ?? null : data ?? null;
       setPet(visible);
       setLoading(false);
@@ -42,7 +48,7 @@ const PetPublic = () => {
             setStatusLocal("Localização enviada com sucesso!");
             setStatusKind("ok");
             // O intervalo mínimo entre leituras é aplicado no servidor
-            await salvarLocalizacao(id, lat, lng);
+            await salvarLocalizacao(petId, lat, lng);
           },
           () => {
             setStatusLocal("Não foi possível obter localização");

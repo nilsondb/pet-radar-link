@@ -683,6 +683,67 @@ export type Database = {
           },
         ]
       }
+      tag_solicitacoes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          observacoes: string | null
+          pet_id: string
+          status: string
+          tag_uid: string | null
+          tutor_id: string | null
+          updated_at: string
+          veterinarian_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          observacoes?: string | null
+          pet_id: string
+          status?: string
+          tag_uid?: string | null
+          tutor_id?: string | null
+          updated_at?: string
+          veterinarian_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          observacoes?: string | null
+          pet_id?: string
+          status?: string
+          tag_uid?: string | null
+          tutor_id?: string | null
+          updated_at?: string
+          veterinarian_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tag_solicitacoes_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tag_solicitacoes_tutor_id_fkey"
+            columns: ["tutor_id"]
+            isOneToOne: false
+            referencedRelation: "tutores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tag_solicitacoes_veterinarian_id_fkey"
+            columns: ["veterinarian_id"]
+            isOneToOne: false
+            referencedRelation: "veterinarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tags: {
         Row: {
           activated_at: string | null
@@ -898,6 +959,29 @@ export type Database = {
         Args: { p_email: string; p_nome: string; p_senha: string }
         Returns: string
       }
+      admin_listar_usuarios: {
+        Args: never
+        Returns: {
+          admin_ativo: boolean
+          chave: string
+          clinica: string
+          conta_vinculada: boolean
+          criado_em: string
+          crmv: string
+          email: string
+          nome: string
+          pacientes_count: number
+          papeis: string[]
+          pets_count: number
+          status: string
+          status_profissional: string
+          tags_count: number
+          tutor_id: string
+          uf_crmv: string
+          user_id: string
+          veterinario_id: string
+        }[]
+      }
       admin_login: {
         Args: { p_email: string; p_senha_hash: string }
         Returns: {
@@ -906,6 +990,10 @@ export type Database = {
           id: string
           nome: string
         }[]
+      }
+      admin_preparar_tag: {
+        Args: { p_pet_id: string; p_solicitacao?: string; p_uid: string }
+        Returns: string
       }
       admin_revogar_papel: {
         Args: {
@@ -930,6 +1018,10 @@ export type Database = {
           p_telefone: string
           p_token: string
         }
+        Returns: string
+      }
+      ativar_tag_para_pet: {
+        Args: { p_token: string; p_uid: string }
         Returns: string
       }
       concluir_cadastro_veterinario: {
@@ -1009,6 +1101,36 @@ export type Database = {
       reivindicar_pet: {
         Args: { p_id: string; p_token: string }
         Returns: boolean
+      }
+      resolver_tag_publica: { Args: { p_uid: string }; Returns: string }
+      vet_buscar_pet_por_tag: {
+        Args: { p_uid: string }
+        Returns: {
+          especie: string
+          foto_url: string
+          nome_pet: string
+          pet_id: string
+          raca: string
+          sexo: string
+          tag_uid: string
+          tutor_nome: string
+          vinculo_status: string
+        }[]
+      }
+      vet_criar_paciente: {
+        Args: {
+          p_data_nascimento?: string
+          p_especie?: string
+          p_nome_pet: string
+          p_observacoes?: string
+          p_peso?: number
+          p_raca?: string
+          p_sexo?: string
+          p_tutor_email?: string
+          p_tutor_nome?: string
+          p_tutor_telefone?: string
+        }
+        Returns: string
       }
       vet_tem_acesso: { Args: { p_pet_id: string }; Returns: boolean }
     }

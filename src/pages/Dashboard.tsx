@@ -6,7 +6,7 @@ import { PetHeader } from "@/components/PetHeader";
 import { PetSidebar } from "@/components/PetSidebar";
 import { PetSwitcher } from "@/components/PetSwitcher";
 import { Button } from "@/components/ui/button";
-import { Loader2, PawPrint, MapPin, Clock, Calendar, ShieldCheck, Siren, HeartPulse, Syringe, Brain, Bot } from "lucide-react";
+import { Loader2, PawPrint, MapPin, Clock, Calendar, ShieldCheck, Siren, HeartPulse, Syringe, Brain, Bot, Stethoscope } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -174,6 +174,7 @@ const Dashboard = () => {
             { to: `/vacinas?id=${id}`, label: "Vacinas", icon: Syringe },
             { to: `/historico?id=${id}`, label: "Histórico", icon: Brain },
             { to: `/assistente-ia?id=${id}`, label: "Assistente IA", icon: Bot },
+            { to: `/veterinarios?id=${id}`, label: "Profissionais autorizados", icon: Stethoscope },
           ].map(({ to, label, icon: Icon }) => (
             <Link
               key={to}
