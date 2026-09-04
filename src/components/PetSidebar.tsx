@@ -1,4 +1,4 @@
-import { Pencil, Siren, LogOut, X, Syringe, Bug, HeartPulse, MapPin, Bot, Brain, Home, Dog } from "lucide-react";
+import { Pencil, LogOut, X, Syringe, Bug, HeartPulse, MapPin, Brain, Home, Dog } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/lib/auth";
@@ -23,8 +23,7 @@ export const PetSidebar = ({ id, open, onClose }: Props) => {
     { to: `/vermifugacao${qs}`, label: "Vermifugação", icon: Bug },
     { to: `/saude${qs}`, label: "Saúde do Pet", icon: HeartPulse },
     { to: `/localizacoes${qs}`, label: "Localizações", icon: MapPin },
-    { to: `/historico${qs}`, label: "Histórico Inteligente", icon: Brain },
-    { to: `/assistente-ia${qs}`, label: "Assistente IA", icon: Bot },
+    { to: `/historico${qs}`, label: "Histórico do Pet", icon: Brain },
   ];
 
   const handleLogout = async () => {
