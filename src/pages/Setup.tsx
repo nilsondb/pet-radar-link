@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useIdFromUrl, useTokenFromUrl, uploadPetPhoto } from "@/lib/petUtils";
-import { fetchTutor } from "@/lib/tutorUtils";
+import { fetchMeuTutor } from "@/lib/tutorUtils";
 import { PetHeader } from "@/components/PetHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,6 @@ import { Loader2, PawPrint, ShieldAlert } from "lucide-react";
 const Setup = () => {
   const id = useIdFromUrl();
   const token = useTokenFromUrl();
-  const tutorParam = new URLSearchParams(window.location.search).get("tutor");
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
   const [tokenValid, setTokenValid] = useState(false);
@@ -39,14 +38,13 @@ const Setup = () => {
       const { data: status } = await supabase.rpc("pet_status_ativacao", { p_id: id });
       const row = Array.isArray(status) ? status[0] : status;
       if (row?.ativado) {
-        const qs = token ? `?id=${id}&token=${token}` : `?id=${id}`;
-        navigate(`/dashboard${qs}`, { replace: true });
+        navigate(`/dashboard?id=${id}`, { replace: true });
         return;
       }
       // A validade do token é confirmada no servidor na ativação; aqui apenas exigimos sua presença
       setTokenValid(!!token);
-      if (token && tutorParam) {
-        const tutor = await fetchTutor(tutorParam);
+      if (token) {
+        const tutor = await fetchMeuTutor();
         if (tutor) {
           setForm((f) => ({
             ...f,
@@ -92,7 +90,7 @@ const Setup = () => {
       }
 
       toast.success("Pet cadastrado com sucesso! 🐾");
-      navigate(`/dashboard?id=${id}&token=${token}&pet=1`);
+      navigate(`/dashboard?id=${id}`, { replace: true });
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar");
     } finally {

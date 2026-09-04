@@ -94,7 +94,7 @@ const Veterinarios = () => {
 
   return (
     <div className="min-h-screen">
-      <PetSidebar id={id!} token={token} open={menuOpen} onClose={() => setMenuOpen(false)} />
+      <PetSidebar id={id!} open={menuOpen} onClose={() => setMenuOpen(false)} />
       <PetHeader title="Veterinários" onMenuClick={() => setMenuOpen(true)} />
 
       <main className="max-w-3xl mx-auto p-4 space-y-6">

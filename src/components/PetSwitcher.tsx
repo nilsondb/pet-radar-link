@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { fetchPetResumo, fetchPetsDoTutor, petQuery, type PetResumo } from "@/lib/tutorUtils";
+import { fetchMeusPets, fetchPetResumo, petQuery, type PetResumo } from "@/lib/tutorUtils";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -31,8 +31,11 @@ export const PetSwitcher = ({ petId, token, className }: Props) => {
       if (cancelado) return;
       setAtual(pet);
       if (!pet) return;
-      const lista = await fetchPetsDoTutor(pet.tutor_id, petId);
-      if (!cancelado) setPets(lista.filter((p) => p.status_ativado || p.id === petId));
+      const lista = await fetchMeusPets();
+      if (!cancelado) {
+        const visiveis = lista.filter((p) => p.status_ativado || p.id === petId);
+        setPets(visiveis.length ? visiveis : [pet]);
+      }
     })();
     return () => {
       cancelado = true;
@@ -40,7 +43,7 @@ export const PetSwitcher = ({ petId, token, className }: Props) => {
   }, [petId]);
 
   const trocar = (p: PetResumo) => {
-    navigate(`${location.pathname}${petQuery(p.id, p.token)}`);
+    navigate(`${location.pathname}${petQuery(p.id)}`);
   };
 
   if (!atual) return null;
@@ -85,7 +88,7 @@ export const PetSwitcher = ({ petId, token, className }: Props) => {
           ))}
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onClick={() => navigate(`/meus-pets${petQuery(petId, token)}`)}
+            onClick={() => navigate("/meus-pets")}
             className="gap-2 cursor-pointer"
           >
             <Dog className="w-4 h-4" /> Meus Pets
