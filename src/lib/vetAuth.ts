@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { getUser, signIn, signOut, signUp } from "@/lib/auth";
+import { getUser, hasRole, signIn, signOut, signUp } from "@/lib/auth";
 
 export type VetSession = {
   id: string;
@@ -29,12 +29,15 @@ export const loadVetSession = async (): Promise<VetSession | null> => {
     localStorage.removeItem(KEY);
     return null;
   }
-  const { data } = await supabase
-    .from("veterinarios")
-    .select("id, email, nome, crmv, clinica, ativo, status_profissional")
-    .eq("user_id", user.id)
-    .maybeSingle();
-  if (!data || !data.ativo) {
+  const [{ data, error }, possuiPapel] = await Promise.all([
+    supabase
+      .from("veterinarios")
+      .select("id, user_id, email, nome, crmv, clinica, ativo, status_profissional")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    hasRole("veterinarian"),
+  ]);
+  if (error || !data || !data.ativo || data.user_id !== user.id || !possuiPapel) {
     localStorage.removeItem(KEY);
     return null;
   }
@@ -60,6 +63,10 @@ export const vetLogin = async (email: string, senha: string) => {
   return loadVetSession();
 };
 
+export type VetCadastroResultado =
+  | { status: "perfil_concluido"; session: VetSession }
+  | { status: "confirmacao_pendente"; session: null };
+
 export const vetSignup = async (dados: {
   nome: string;
   email: string;
@@ -71,24 +78,26 @@ export const vetSignup = async (dados: {
   especialidade?: string;
 }) => {
   const session = await signUp(dados.email, dados.senha, { nome: dados.nome, tipo: "veterinarian" });
-  if (!session) return { precisaConfirmarEmail: true as const, session: null };
-  const perfil = await criarPerfilVeterinario(dados);
-  return { precisaConfirmarEmail: false as const, session: perfil };
+  if (!session) return { status: "confirmacao_pendente", session: null } satisfies VetCadastroResultado;
+  const perfil = await concluirCadastroVeterinario(dados);
+  if (!perfil) throw new Error("Não foi possível validar o perfil profissional.");
+  return { status: "perfil_concluido", session: perfil } satisfies VetCadastroResultado;
 };
 
-/** Cria/vincula o perfil profissional e o papel veterinarian (fluxo controlado no banco). */
-export const criarPerfilVeterinario = async (dados: {
+/** Cria ou repara o perfil do usuário autenticado; o e-mail vem da sessão oficial. */
+export const concluirCadastroVeterinario = async (dados: {
   nome: string;
-  email: string;
   telefone?: string;
   crmv?: string;
   uf_crmv?: string;
   clinica?: string;
   especialidade?: string;
 }) => {
-  const { error } = await supabase.rpc("criar_perfil_veterinario", {
+  const user = await getUser();
+  if (!user) throw new Error("Entre com sua conta para concluir o cadastro profissional.");
+
+  const { error } = await supabase.rpc("concluir_cadastro_veterinario", {
     p_nome: dados.nome,
-    p_email: dados.email.trim().toLowerCase(),
     p_telefone: dados.telefone || null,
     p_crmv: dados.crmv || null,
     p_uf_crmv: dados.uf_crmv || null,
@@ -98,3 +107,5 @@ export const criarPerfilVeterinario = async (dados: {
   if (error) throw error;
   return loadVetSession();
 };
+
+export const criarPerfilVeterinario = concluirCadastroVeterinario;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { VetLayout } from "@/components/VetLayout";
-import { getVetSession } from "@/lib/vetAuth";
+import { getVetSession, loadVetSession } from "@/lib/vetAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,10 +47,7 @@ const VetPerfil = () => {
     try {
       const { error } = await supabase.from("veterinarios").update(form).eq("id", session.id);
       if (error) throw error;
-      localStorage.setItem(
-        "vet_auth",
-        JSON.stringify({ ...session, nome: form.nome, email: form.email, crmv: form.crmv, clinica: form.clinica })
-      );
+      await loadVetSession();
       toast.success("Perfil atualizado.");
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar");
