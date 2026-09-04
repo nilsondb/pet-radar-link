@@ -52,21 +52,13 @@ const App = () => (
 
       <BrowserRouter>
         <Routes>
-          {/* ==================================================
-              ÁREA PÚBLICA
-          ================================================== */}
-
           <Route path="/" element={<Index />} />
           <Route path="/p/:uid" element={<PetPublic />} />
-          {/* Compatibilidade temporária com links antigos /pet?id=... */}
           <Route path="/pet" element={<PetPublic />} />
 
-          {/* ==================================================
-              TUTOR
-              Supabase Auth + TutorGate + RLS
-          ================================================== */}
+          {/* O primeiro cadastro de tutor nasce aqui: conta + tutor + primeiro pet + TAG. */}
+          <Route path="/setup" element={<Setup />} />
 
-          <Route path="/setup" element={<TutorGate><Setup /></TutorGate>} />
           <Route path="/dashboard" element={<TutorGate><Dashboard /></TutorGate>} />
           <Route path="/meus-pets" element={<TutorGate><MeusPets /></TutorGate>} />
           <Route path="/edit" element={<TutorGate><Edit /></TutorGate>} />
@@ -75,13 +67,7 @@ const App = () => (
           <Route path="/saude" element={<TutorGate><Saude /></TutorGate>} />
           <Route path="/localizacoes" element={<TutorGate><Localizacoes /></TutorGate>} />
           <Route path="/historico" element={<TutorGate><HistoricoInteligente /></TutorGate>} />
-
-          {/* Mantida por compatibilidade; não aparece na sidebar principal do Tutor. */}
           <Route path="/veterinarios" element={<TutorGate><Veterinarios /></TutorGate>} />
-
-          {/* ==================================================
-              VETERINÁRIO
-          ================================================== */}
 
           <Route path="/vet/login" element={<VetLogin />} />
           <Route path="/vet" element={<VetGate><VetDashboard /></VetGate>} />
@@ -92,10 +78,6 @@ const App = () => (
           <Route path="/vet/exames" element={<VetGate><VetExames /></VetGate>} />
           <Route path="/vet/vacinacao" element={<VetGate><VetVacinacao /></VetGate>} />
           <Route path="/vet/perfil" element={<VetGate><VetPerfil /></VetGate>} />
-
-          {/* ==================================================
-              ADMINISTRADOR
-          ================================================== */}
 
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminGate><Admin /></AdminGate>} />
