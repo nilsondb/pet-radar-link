@@ -13,14 +13,14 @@ export type PacienteVinculo = {
   authorized_at: string | null;
   pet: {
     id: string;
-    nome_pet: string | null;
-    foto_url: string | null;
+    nome: string | null;
+    foto: string | null;
     raca: string | null;
     especie: string | null;
     sexo: string | null;
     data_nascimento: string | null;
     status_perdido: boolean;
-    nome_dono: string | null;
+    tutor_nome: string | null;
     telefone: string | null;
     tutor_id: string | null;
   } | null;
@@ -33,14 +33,14 @@ function mapPaciente(row: any): PacienteVinculo {
   const pet = row.pet
     ? {
         id: row.pet.id,
-        nome_pet: row.pet.nome ?? null,
-        foto_url: publicPetPhotoUrl(row.pet.foto_path),
+        nome: row.pet.nome ?? null,
+        foto: publicPetPhotoUrl(row.pet.foto_path),
         raca: row.pet.raca ?? null,
         especie: row.pet.especie ?? null,
         sexo: row.pet.sexo ?? null,
         data_nascimento: row.pet.data_nascimento ?? null,
         status_perdido: !!row.pet.status_perdido,
-        nome_dono: row.pet.tutor?.nome ?? null,
+        tutor_nome: row.pet.tutor?.nome ?? null,
         telefone: row.pet.tutor?.telefone ?? null,
         tutor_id: row.pet.tutor_id ?? null,
       }
@@ -117,8 +117,8 @@ export async function temAcessoAtivo(petId: string, vetId: string) {
 
 export type PetPorTag = {
   pet_id: string;
-  nome_pet: string | null;
-  foto_url: string | null;
+  nome: string | null;
+  foto: string | null;
   especie: string | null;
   raca: string | null;
   sexo: string | null;
@@ -130,29 +130,40 @@ export type PetPorTag = {
 export async function buscarPetPorTag(uid: string): Promise<PetPorTag | null> {
   const { data, error } = await supabase.rpc("vet_buscar_pet_por_tag", { p_uid: uid.trim() });
   if (error) throw error;
-  const row = Array.isArray(data) ? data[0] : data;
-  return (row as PetPorTag) ?? null;
+  const row: any = Array.isArray(data) ? data[0] : data;
+  if (!row) return null;
+  return {
+    pet_id: row.pet_id,
+    nome: row.nome_pet ?? null,
+    foto: row.foto_url ?? null,
+    especie: row.especie ?? null,
+    raca: row.raca ?? null,
+    sexo: row.sexo ?? null,
+    tag_uid: row.tag_uid ?? null,
+    tutor_nome: row.tutor_nome ?? null,
+    vinculo_status: row.vinculo_status ?? null,
+  };
 }
 
 export async function criarPacienteSemTag(dados: {
-  nome_pet: string;
+  nome: string;
   especie?: string;
   raca?: string;
   sexo?: string;
   data_nascimento?: string;
-  peso?: string;
+  peso_kg?: string;
   tutor_nome?: string;
   tutor_telefone?: string;
   tutor_email?: string;
   observacoes?: string;
 }): Promise<string> {
   const { data, error } = await supabase.rpc("vet_criar_paciente", {
-    p_nome_pet: dados.nome_pet.trim(),
+    p_nome_pet: dados.nome.trim(),
     p_especie: dados.especie || null,
     p_raca: dados.raca || null,
     p_sexo: dados.sexo || null,
     p_data_nascimento: dados.data_nascimento || null,
-    p_peso: dados.peso ? Number(dados.peso) : null,
+    p_peso: dados.peso_kg ? Number(dados.peso_kg) : null,
     p_tutor_nome: dados.tutor_nome || null,
     p_tutor_telefone: dados.tutor_telefone || null,
     p_tutor_email: dados.tutor_email || null,
