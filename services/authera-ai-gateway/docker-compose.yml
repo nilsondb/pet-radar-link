@@ -1,0 +1,15 @@
+services:
+  authera-ai-gateway:
+    build: .
+    container_name: authera-ai-gateway
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8091:8091"
+    environment:
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:4b}
+      OLLAMA_VISION_MODEL: ${OLLAMA_VISION_MODEL:-}
+      GATEWAY_TOKEN: ${GATEWAY_TOKEN}
+      REQUEST_TIMEOUT: ${REQUEST_TIMEOUT:-120}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
