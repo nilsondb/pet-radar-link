@@ -2,33 +2,45 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/AdminLayout";
-import { Dog, CheckCircle2, Circle, DollarSign, Activity } from "lucide-react";
-
+import { Dog, CheckCircle2, Siren, Tags } from "lucide-react";
 
 const Admin = () => {
-  const [stats, setStats] = useState({ total: 0, ativos: 0, pendentes: 0, receita: 0 });
-  const [saas, setSaas] = useState<any>(null);
+  const [stats, setStats] = useState({
+    total: 0,
+    ativos: 0,
+    perdidos: 0,
+    tagsAtivas: 0,
+  });
 
   useEffect(() => {
     (async () => {
-      const { data: pets } = await supabase.from("pets").select("status_ativado");
-      const { data: pags } = await supabase.from("pagamentos").select("valor, status");
-      const { data: s } = await supabase.from("integration_settings").select("*").order("updated_at", { ascending: false }).limit(1).maybeSingle();
-      const total = pets?.length ?? 0;
-      const ativos = pets?.filter((p: any) => p.status_ativado).length ?? 0;
-      const receita = (pags || [])
-        .filter((p: any) => p.status === "pago")
-        .reduce((s: number, p: any) => s + Number(p.valor || 0), 0);
-      setStats({ total, ativos, pendentes: total - ativos, receita });
-      setSaas(s);
+      const [{ data: pets, error: petsError }, { data: tags, error: tagsError }] = await Promise.all([
+        supabase.from("pets").select("id, ativo, status_perdido"),
+        supabase.from("tags").select("id, status"),
+      ]);
+
+      if (petsError || tagsError) {
+        console.error("Erro ao carregar indicadores do admin", petsError || tagsError);
+        return;
+      }
+
+      const listaPets = pets || [];
+      const listaTags = tags || [];
+
+      setStats({
+        total: listaPets.length,
+        ativos: listaPets.filter((p: any) => p.ativo).length,
+        perdidos: listaPets.filter((p: any) => p.status_perdido).length,
+        tagsAtivas: listaTags.filter((t: any) => t.status === "active").length,
+      });
     })();
   }, []);
 
   const cards = [
     { label: "Total de Pets", value: stats.total, icon: Dog, color: "from-primary to-primary-glow" },
-    { label: "Ativados", value: stats.ativos, icon: CheckCircle2, color: "from-emerald-500 to-emerald-400" },
-    { label: "Pendentes", value: stats.pendentes, icon: Circle, color: "from-amber-500 to-amber-400" },
-    { label: "Receita (R$)", value: Number(stats.receita).toFixed(2), icon: DollarSign, color: "from-fuchsia-500 to-pink-400" },
+    { label: "Pets Ativos", value: stats.ativos, icon: CheckCircle2, color: "from-emerald-500 to-emerald-400" },
+    { label: "Pets Perdidos", value: stats.perdidos, icon: Siren, color: "from-rose-500 to-red-400" },
+    { label: "TAGs Ativas", value: stats.tagsAtivas, icon: Tags, color: "from-cyan-500 to-blue-400" },
   ];
 
   return (
@@ -49,24 +61,22 @@ const Admin = () => {
         ))}
       </div>
 
-      <Link to="/admin/saas-center" className="block mt-6 bg-card border rounded-2xl p-6 hover:shadow-md transition-shadow">
-        <div className="flex items-start gap-4">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center text-white">
-            <Activity className="w-5 h-5" />
-          </div>
-          <div className="flex-1">
-            <h3 className="font-bold">SaaS Center</h3>
-            <p className="text-sm text-muted-foreground">
-              Status: <span className="font-medium">{saas?.status || "inativo"}</span> · Última sincronização: {saas?.last_sync ? new Date(saas.last_sync).toLocaleString("pt-BR") : "—"}
-            </p>
-          </div>
-        </div>
-      </Link>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+        <Link to="/admin/pets" className="bg-card border rounded-2xl p-6 hover:shadow-md transition-shadow">
+          <h3 className="font-bold">Pets</h3>
+          <p className="text-sm text-muted-foreground mt-1">Consulte os pets cadastrados e acompanhe o status de cada animal.</p>
+        </Link>
+
+        <Link to="/admin/tags" className="bg-card border rounded-2xl p-6 hover:shadow-md transition-shadow">
+          <h3 className="font-bold">TAGs NFC</h3>
+          <p className="text-sm text-muted-foreground mt-1">Gerencie estoque, ativação, substituição e vínculo das TAGs.</p>
+        </Link>
+      </div>
 
       <div className="mt-6 bg-card border rounded-2xl p-6">
-        <h3 className="font-bold text-lg mb-1">Bem-vindo ao painel</h3>
+        <h3 className="font-bold text-lg mb-1">Authera Pet</h3>
         <p className="text-sm text-muted-foreground">
-          Gerencie pets, usuários e financeiro pelo menu ao lado.
+          Painel administrativo conectado ao schema atual do Authera Pet.
         </p>
       </div>
     </AdminLayout>
