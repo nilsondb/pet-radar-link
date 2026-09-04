@@ -28,17 +28,13 @@ const VetPacientes = () => {
   const [loading, setLoading] = useState(true);
   const [lista, setLista] = useState<PacienteVinculo[]>([]);
   const [busca, setBusca] = useState("");
-
-  // busca por TAG
   const [buscaTag, setBuscaTag] = useState("");
   const [encontrado, setEncontrado] = useState<PetPorTag | null>(null);
   const [buscando, setBuscando] = useState(false);
-
-  // novo paciente (sem TAG)
   const [novoOpen, setNovoOpen] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [form, setForm] = useState({
-    nome_pet: "", especie: "", raca: "", sexo: "", data_nascimento: "", peso: "",
+    nome: "", especie: "", raca: "", sexo: "", data_nascimento: "", peso_kg: "",
     observacoes: "", tutor_nome: "", tutor_telefone: "", tutor_email: "",
   });
 
@@ -50,8 +46,7 @@ const VetPacientes = () => {
 
   useEffect(() => {
     carregar();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [session?.id]);
 
   const buscarPet = async () => {
     const alvo = buscaTag.trim();
@@ -94,12 +89,11 @@ const VetPacientes = () => {
     if (!session) return;
     setSalvando(true);
     try {
-      // O servidor reaproveita o tutor existente (telefone/e-mail) e nunca cria conta de acesso.
       await criarPacienteSemTag(form);
       toast.success("Paciente cadastrado sem TAG. O tutor poderá vincular a conta depois. 🐾");
       setNovoOpen(false);
       setForm({
-        nome_pet: "", especie: "", raca: "", sexo: "", data_nascimento: "", peso: "",
+        nome: "", especie: "", raca: "", sexo: "", data_nascimento: "", peso_kg: "",
         observacoes: "", tutor_nome: "", tutor_telefone: "", tutor_email: "",
       });
       carregar();
@@ -125,8 +119,8 @@ const VetPacientes = () => {
     const t = busca.toLowerCase();
     return (
       !t ||
-      (v.pet?.nome_pet || "").toLowerCase().includes(t) ||
-      (v.pet?.nome_dono || "").toLowerCase().includes(t) ||
+      (v.pet?.nome || "").toLowerCase().includes(t) ||
+      (v.pet?.tutor_nome || "").toLowerCase().includes(t) ||
       v.pet_id.toLowerCase().includes(t)
     );
   });
@@ -142,12 +136,10 @@ const VetPacientes = () => {
         <Button onClick={() => setNovoOpen(true)}><Plus className="w-4 h-4 mr-1" /> Novo Paciente</Button>
       </div>
 
-      {/* BUSCA POR TAG */}
       <div className="bg-card border rounded-2xl p-5 mb-5">
         <h3 className="font-bold mb-1 flex items-center gap-2"><Nfc className="w-4 h-4 text-primary" /> Buscar pet por TAG</h3>
         <p className="text-sm text-muted-foreground mb-3">
-          Informe o identificador público da TAG (ex.: 9YUY9X). Os dados clínicos só ficam
-          disponíveis após a autorização do tutor.
+          Informe o identificador público da TAG. Os dados clínicos só ficam disponíveis após a autorização do tutor.
         </p>
         <div className="flex gap-2">
           <Input placeholder="Identificação da TAG" value={buscaTag} onChange={(e) => setBuscaTag(e.target.value)} />
@@ -157,8 +149,8 @@ const VetPacientes = () => {
         </div>
         {encontrado && (
           <div className="mt-4 p-4 rounded-xl bg-muted flex flex-col sm:flex-row sm:items-center gap-3">
-            {encontrado.foto_url ? (
-              <img src={encontrado.foto_url} alt={`Foto de ${encontrado.nome_pet || "pet"}`}
+            {encontrado.foto ? (
+              <img src={encontrado.foto} alt={`Foto de ${encontrado.nome || "pet"}`}
                 className="w-16 h-16 rounded-full object-cover" />
             ) : (
               <div className="w-16 h-16 rounded-full bg-background flex items-center justify-center">
@@ -166,7 +158,7 @@ const VetPacientes = () => {
               </div>
             )}
             <div className="flex-1">
-              <p className="font-bold">{encontrado.nome_pet || encontrado.pet_id}</p>
+              <p className="font-bold">{encontrado.nome || encontrado.pet_id}</p>
               <p className="text-xs text-muted-foreground">
                 {encontrado.especie || "—"} · {encontrado.raca || "—"} · TAG {encontrado.tag_uid}
               </p>
@@ -186,7 +178,6 @@ const VetPacientes = () => {
         )}
       </div>
 
-      {/* PACIENTES */}
       {loading ? (
         <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
       ) : filtrados.length === 0 ? (
@@ -195,8 +186,8 @@ const VetPacientes = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtrados.map((v) => (
             <div key={v.id} className="bg-card border rounded-2xl p-5 flex flex-col items-center text-center gap-3">
-              {v.pet?.foto_url ? (
-                <img src={v.pet.foto_url} alt={`Foto de ${v.pet?.nome_pet || "pet"}`}
+              {v.pet?.foto ? (
+                <img src={v.pet.foto} alt={`Foto de ${v.pet?.nome || "pet"}`}
                   className="w-20 h-20 rounded-full object-cover ring-4 ring-primary/20" />
               ) : (
                 <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center">
@@ -204,8 +195,8 @@ const VetPacientes = () => {
                 </div>
               )}
               <div>
-                <h3 className="font-bold">{v.pet?.nome_pet || v.pet_id}</h3>
-                <p className="text-xs text-muted-foreground">Tutor: {v.pet?.nome_dono || "—"}</p>
+                <h3 className="font-bold">{v.pet?.nome || v.pet_id}</h3>
+                <p className="text-xs text-muted-foreground">Tutor: {v.pet?.tutor_nome || "—"}</p>
                 <p className="text-xs text-muted-foreground">
                   {v.pet?.raca || "—"} · {calcularIdade(v.pet?.data_nascimento ?? null)}
                 </p>
@@ -228,7 +219,7 @@ const VetPacientes = () => {
                   <Button
                     variant="outline"
                     className="w-full"
-                    onClick={() => pedirTag(v.pet_id, v.pet?.nome_pet || v.pet_id)}
+                    onClick={() => pedirTag(v.pet_id, v.pet?.nome || v.pet_id)}
                   >
                     <Nfc className="w-4 h-4 mr-1" /> SOLICITAR TAG
                   </Button>
@@ -241,14 +232,12 @@ const VetPacientes = () => {
         </div>
       )}
 
-      {/* NOVO PACIENTE SEM TAG */}
       <Dialog open={novoOpen} onOpenChange={setNovoOpen}>
         <DialogContent className="bg-background max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Novo paciente (sem TAG)</DialogTitle>
             <DialogDescription>
-              O responsável já existente é reaproveitado pelo telefone ou e-mail — nenhum tutor ou
-              pet é duplicado. Nenhuma conta de acesso é criada: o tutor vincula a conta depois.
+              O responsável já existente é reaproveitado pelo telefone ou e-mail. Nenhuma conta de acesso é criada: o tutor vincula a conta depois.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={criarPaciente} className="space-y-3">
@@ -266,7 +255,7 @@ const VetPacientes = () => {
             <p className="text-sm font-medium">2. Pet</p>
             <div>
               <Label htmlFor="p-nome">Nome do pet *</Label>
-              <Input id="p-nome" required value={form.nome_pet} onChange={(e) => setForm({ ...form, nome_pet: e.target.value })} />
+              <Input id="p-nome" required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -283,7 +272,7 @@ const VetPacientes = () => {
               </div>
               <div>
                 <Label htmlFor="p-peso">Peso (kg)</Label>
-                <Input id="p-peso" type="number" step="0.1" value={form.peso} onChange={(e) => setForm({ ...form, peso: e.target.value })} />
+                <Input id="p-peso" type="number" step="0.1" value={form.peso_kg} onChange={(e) => setForm({ ...form, peso_kg: e.target.value })} />
               </div>
             </div>
             <div>
