@@ -4,7 +4,7 @@ import { VetLayout } from "@/components/VetLayout";
 import { getVetSession } from "@/lib/vetAuth";
 import { temAcessoAtivo } from "@/lib/vetData";
 import { supabase } from "@/integrations/supabase/client";
-import { calcularIdade } from "@/lib/petUtils";
+import { calcularIdade, publicPetPhotoUrl } from "@/lib/petUtils";
 import { abrirExame } from "@/lib/exames";
 import { logPetEvento } from "@/lib/petEventos";
 import { Button } from "@/components/ui/button";
@@ -37,14 +37,20 @@ const VetProntuario = () => {
       setLoading(false);
       return;
     }
+
     const [p, a, r, v, m, e] = await Promise.all([
-      supabase.from("pets").select("*").eq("id", petId).maybeSingle(),
+      supabase
+        .from("pets")
+        .select("id, nome, especie, raca, sexo, data_nascimento, peso_kg, foto_path, tutores(nome, telefone)")
+        .eq("id", petId)
+        .maybeSingle(),
       supabase.from("atendimentos_veterinarios").select("*").eq("pet_id", petId).order("data_atendimento", { ascending: false }),
       supabase.from("registros_clinicos").select("*").eq("pet_id", petId).order("created_at", { ascending: false }),
       supabase.from("vacinas").select("*").eq("pet_id", petId).order("data_aplicacao", { ascending: false }),
       supabase.from("medicamentos").select("*").eq("pet_id", petId).order("created_at", { ascending: false }),
       supabase.from("exames").select("*").eq("pet_id", petId).order("created_at", { ascending: false }),
     ]);
+
     setPet(p.data);
     setAtendimentos(a.data || []);
     setRegistros(r.data || []);
@@ -78,19 +84,24 @@ const VetProntuario = () => {
         .single();
       if (error) throw error;
 
-      await supabase.from("registros_clinicos").insert({
+      const { error: registroError } = await supabase.from("registros_clinicos").insert({
         pet_id: petId,
         veterinarian_id: session.id,
         atendimento_id: data.id,
         tipo: "atendimento",
         titulo: novo.motivo || "Atendimento veterinário",
-        descricao: novo.anamnese || null,
+        conteudo: novo.anamnese || novo.observacoes || null,
       });
+      if (registroError) throw registroError;
+
       await logPetEvento(
-        petId, "status_pet", "Atendimento veterinário realizado",
+        petId,
+        "status_pet",
+        "Atendimento veterinário realizado",
         `${novo.motivo || "Consulta"} — registrado por ${session.nome}`,
         null
       );
+
       toast.success("Atendimento registrado.");
       setNovo({ data_atendimento: "", motivo: "", anamnese: "", observacoes: "" });
       carregar();
@@ -124,22 +135,24 @@ const VetProntuario = () => {
     );
   }
 
+  const fotoUrl = publicPetPhotoUrl(pet?.foto_path);
+
   return (
-    <VetLayout title={`Prontuário · ${pet?.nome_pet || petId}`}>
+    <VetLayout title={`Prontuário · ${pet?.nome || petId}`}>
       <div className="bg-card border rounded-2xl p-5 flex items-center gap-4 mb-5">
-        {pet?.foto_url ? (
-          <img src={pet.foto_url} alt={`Foto de ${pet?.nome_pet || "pet"}`} className="w-16 h-16 rounded-full object-cover" />
+        {fotoUrl ? (
+          <img src={fotoUrl} alt={`Foto de ${pet?.nome || "pet"}`} className="w-16 h-16 rounded-full object-cover" />
         ) : (
           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
             <Dog className="w-7 h-7 text-muted-foreground" />
           </div>
         )}
         <div className="min-w-0">
-          <h3 className="font-bold text-lg">{pet?.nome_pet || petId}</h3>
+          <h3 className="font-bold text-lg">{pet?.nome || petId}</h3>
           <p className="text-sm text-muted-foreground">
-            {pet?.especie || "—"} · {pet?.raca || "—"} · {pet?.sexo || "—"} · {calcularIdade(pet?.data_nascimento)} · {pet?.peso ? `${pet.peso} kg` : "peso —"}
+            {pet?.especie || "—"} · {pet?.raca || "—"} · {pet?.sexo || "—"} · {calcularIdade(pet?.data_nascimento)} · {pet?.peso_kg ? `${pet.peso_kg} kg` : "peso —"}
           </p>
-          <p className="text-xs text-muted-foreground">Tutor: {pet?.nome_dono || "—"}</p>
+          <p className="text-xs text-muted-foreground">Tutor: {pet?.tutores?.nome || "—"}</p>
         </div>
       </div>
 
@@ -198,7 +211,7 @@ const VetProntuario = () => {
                 {new Date(r.created_at).toLocaleString("pt-BR")} · {r.tipo}
               </p>
               <p className="font-medium">{r.titulo}</p>
-              {r.descricao && <p className="text-sm mt-1">{r.descricao}</p>}
+              {r.conteudo && <p className="text-sm mt-1">{r.conteudo}</p>}
             </div>
           ))}
         </TabsContent>
@@ -207,9 +220,9 @@ const VetProntuario = () => {
           {vacinas.length === 0 && <p className="text-sm text-muted-foreground">Nenhum registro.</p>}
           {vacinas.map((v) => (
             <div key={v.id} className="bg-card border rounded-2xl p-4">
-              <p className="font-medium">{v.nome_vacina} <span className="text-xs text-muted-foreground">({v.tipo})</span></p>
+              <p className="font-medium">{v.nome_vacina}</p>
               <p className="text-sm text-muted-foreground">
-                Aplicação: {v.data_aplicacao} · Próxima: {v.proxima_dose || "—"} · por {v.created_by_role || "tutor"}
+                Aplicação: {v.data_aplicacao} · Próxima: {v.proxima_data || "—"} · por {v.created_by_role || "tutor"}
               </p>
             </div>
           ))}
@@ -243,10 +256,10 @@ const VetProntuario = () => {
               <p className="text-sm text-muted-foreground">
                 {e.data_exame || "—"} · enviado por {e.created_by_role || "tutor"}
               </p>
-              {e.arquivo_url && (
+              {e.arquivo_path && (
                 <button
                   type="button"
-                  onClick={() => abrirExame(e.arquivo_url).catch(() => toast.error("Não foi possível abrir o arquivo"))}
+                  onClick={() => abrirExame(e.arquivo_path).catch(() => toast.error("Não foi possível abrir o arquivo"))}
                   className="text-sm text-primary font-medium"
                 >
                   Abrir arquivo
