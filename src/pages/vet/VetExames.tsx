@@ -13,7 +13,11 @@ const VetExames = () => {
   const [itens, setItens] = useState<any[]>([]);
 
   useEffect(() => {
-    if (!session) return;
+    if (!session) {
+      setLoading(false);
+      return;
+    }
+
     (async () => {
       const pacientes = await fetchPacientes(session.id, "active");
       const ids = pacientes.map((p) => p.pet_id);
@@ -21,16 +25,18 @@ const VetExames = () => {
         setLoading(false);
         return;
       }
-      const { data } = await supabase
+
+      const { data, error } = await supabase
         .from("exames")
-        .select("id, pet_id, nome_exame, arquivo_url, data_exame, observacoes, created_by_role, pet:pets(nome_pet)")
+        .select("id, pet_id, nome_exame, arquivo_path, data_exame, observacoes, created_by_role, pet:pets(nome)")
         .in("pet_id", ids)
         .order("created_at", { ascending: false });
+
+      if (error) toast.error(error.message);
       setItens(data || []);
       setLoading(false);
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [session?.id]);
 
   return (
     <VetLayout title="Exames">
@@ -51,14 +57,14 @@ const VetExames = () => {
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate">{e.nome_exame}</p>
                 <p className="text-sm text-muted-foreground truncate">
-                  {e.pet?.nome_pet || e.pet_id} · {e.data_exame || "—"} · por {e.created_by_role || "tutor"}
+                  {e.pet?.nome || e.pet_id} · {e.data_exame || "—"} · por {e.created_by_role || "tutor"}
                 </p>
                 {e.observacoes && <p className="text-sm mt-1">{e.observacoes}</p>}
               </div>
-              {e.arquivo_url && (
+              {e.arquivo_path && (
                 <button
                   type="button"
-                  onClick={() => abrirExame(e.arquivo_url).catch(() => toast.error("Não foi possível abrir o arquivo"))}
+                  onClick={() => abrirExame(e.arquivo_path).catch(() => toast.error("Não foi possível abrir o arquivo"))}
                   className="text-sm text-primary font-medium whitespace-nowrap"
                 >
                   Abrir
