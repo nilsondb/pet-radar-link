@@ -53,6 +53,27 @@ const gerarCodigoAtivacao = () => {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 };
 
+const copiarTexto = async (texto: string) => {
+  if (navigator.clipboard && window.isSecureContext) {
+    await navigator.clipboard.writeText(texto);
+    return;
+  }
+
+  const area = document.createElement("textarea");
+  area.value = texto;
+  area.setAttribute("readonly", "");
+  area.style.position = "fixed";
+  area.style.opacity = "0";
+  area.style.pointerEvents = "none";
+  document.body.appendChild(area);
+  area.select();
+  area.setSelectionRange(0, area.value.length);
+
+  const copiado = document.execCommand("copy");
+  document.body.removeChild(area);
+  if (!copiado) throw new Error("O navegador bloqueou a cópia automática.");
+};
+
 const AdminTags = () => {
   const [tags, setTags] = useState<TagRow[]>([]);
   const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
@@ -132,9 +153,13 @@ const AdminTags = () => {
     load();
   };
 
-  const copiarPaginaPublica = (uid: string) => {
-    navigator.clipboard.writeText(`${window.location.origin}/pet?id=${encodeURIComponent(uid)}`);
-    toast.success("Link público copiado");
+  const copiarPaginaPublica = async (uid: string) => {
+    try {
+      await copiarTexto(`${window.location.origin}/p/${encodeURIComponent(uid)}`);
+      toast.success("Link público copiado");
+    } catch (e: any) {
+      toast.error(e.message || "Não foi possível copiar o link público");
+    }
   };
 
   const linkAtivacao = (uid: string, token: string) => {
@@ -305,10 +330,14 @@ const AdminTags = () => {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => {
-                    const uid = prep.uid.trim().toUpperCase();
-                    navigator.clipboard.writeText(linkAtivacao(uid, tokenGerado));
-                    toast.success("Link de ativação copiado");
+                  onClick={async () => {
+                    try {
+                      const uid = prep.uid.trim().toUpperCase();
+                      await copiarTexto(linkAtivacao(uid, tokenGerado));
+                      toast.success("Link de ativação copiado");
+                    } catch (e: any) {
+                      toast.error(e.message || "Não foi possível copiar o link de ativação");
+                    }
                   }}
                 >
                   <Copy className="w-3 h-3 mr-1" /> Copiar link para o tutor
