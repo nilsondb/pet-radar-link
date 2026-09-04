@@ -10,14 +10,17 @@ import {
 import { Copy, Loader2, Nfc, Search } from "lucide-react";
 import { toast } from "sonner";
 
+type TagStatus = "stock" | "active" | "inactive" | "replaced";
+
 type TagRow = {
   id: string;
   uid_publico: string;
   pet_id: string | null;
-  status: string;
+  status: TagStatus;
   created_at: string;
   activated_at: string | null;
-  pet: { nome_pet: string | null; tutor_id: string | null; tutores: { nome: string } | null } | null;
+  deactivated_at: string | null;
+  pet: { nome: string | null; tutor_id: string | null; tutor: { nome: string } | null } | null;
 };
 
 type Solicitacao = {
@@ -27,13 +30,27 @@ type Solicitacao = {
   tag_uid: string | null;
   created_at: string;
   observacoes: string | null;
+  pet: { nome: string | null } | null;
 };
 
-const statusClass: Record<string, string> = {
-  ativa: "bg-success/15 text-success",
-  estoque: "bg-primary/15 text-primary",
-  inativa: "bg-muted text-muted-foreground",
-  substituida: "bg-destructive/15 text-destructive",
+const statusClass: Record<TagStatus, string> = {
+  active: "bg-success/15 text-success",
+  stock: "bg-primary/15 text-primary",
+  inactive: "bg-muted text-muted-foreground",
+  replaced: "bg-destructive/15 text-destructive",
+};
+
+const statusLabel: Record<TagStatus, string> = {
+  active: "Ativa",
+  stock: "Estoque",
+  inactive: "Inativa",
+  replaced: "Substituída",
+};
+
+const gerarCodigoAtivacao = () => {
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 };
 
 const AdminTags = () => {
@@ -41,7 +58,7 @@ const AdminTags = () => {
   const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState("");
-  const [statusFiltro, setStatusFiltro] = useState("todas");
+  const [statusFiltro, setStatusFiltro] = useState<"todas" | TagStatus>("todas");
 
   const [prepararOpen, setPrepararOpen] = useState(false);
   const [prep, setPrep] = useState({ uid: "", pet_id: "", solicitacao: "" });
@@ -50,18 +67,22 @@ const AdminTags = () => {
 
   const load = async () => {
     setLoading(true);
-    const [{ data: t }, { data: s }] = await Promise.all([
+    const [{ data: t, error: tagError }, { data: s, error: solicitacaoError }] = await Promise.all([
       supabase
         .from("tags")
-        .select("id, uid_publico, pet_id, status, created_at, activated_at, pet:pets(nome_pet, tutor_id, tutores(nome))")
+        .select("id, uid_publico, pet_id, status, created_at, activated_at, deactivated_at, pet:pets(nome, tutor_id, tutor:tutores(nome))")
         .order("created_at", { ascending: false }),
       supabase
         .from("tag_solicitacoes")
-        .select("id, pet_id, status, tag_uid, created_at, observacoes")
+        .select("id, pet_id, status, tag_uid, created_at, observacoes, pet:pets(nome)")
         .order("created_at", { ascending: false }),
     ]);
+
+    if (tagError) toast.error(tagError.message);
+    if (solicitacaoError) toast.error(solicitacaoError.message);
+
     setTags((t as unknown as TagRow[]) || []);
-    setSolicitacoes((s as Solicitacao[]) || []);
+    setSolicitacoes((s as unknown as Solicitacao[]) || []);
     setLoading(false);
   };
 
@@ -69,19 +90,31 @@ const AdminTags = () => {
 
   const preparar = async () => {
     const uid = prep.uid.trim().toUpperCase();
-    const pet = prep.pet_id.trim();
-    if (!uid || !pet) return toast.error("Informe o UID da TAG e o pet.");
+    if (!uid) return toast.error("Informe o UID público da TAG.");
+
     setSalvando(true);
     try {
-      const { data, error } = await supabase.rpc("admin_preparar_tag", {
+      const token = gerarCodigoAtivacao();
+      const expiraEm = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      const { error } = await supabase.rpc("admin_preparar_tag", {
         p_uid: uid,
-        p_pet_id: pet,
-        p_solicitacao: prep.solicitacao || null,
+        p_token: token,
+        p_expira_em: expiraEm,
       });
       if (error) throw error;
-      setTokenGerado(data as string);
-      toast.success("TAG preparada. Envie o link de ativação ao tutor.");
-      load();
+
+      if (prep.solicitacao) {
+        const { error: solicitacaoError } = await supabase
+          .from("tag_solicitacoes")
+          .update({ status: "approved", tag_uid: uid })
+          .eq("id", prep.solicitacao);
+        if (solicitacaoError) throw solicitacaoError;
+      }
+
+      setTokenGerado(token);
+      toast.success("TAG preparada. O código de ativação será mostrado uma única vez.");
+      await load();
     } catch (e: any) {
       toast.error(e.message || "Não foi possível preparar a TAG");
     } finally {
@@ -89,19 +122,26 @@ const AdminTags = () => {
     }
   };
 
-  const alterarStatus = async (tag: TagRow, status: string) => {
+  const alterarStatus = async (tag: TagRow, status: Extract<TagStatus, "inactive" | "replaced">) => {
     const { error } = await supabase
       .from("tags")
-      .update({ status, deactivated_at: status === "ativa" ? null : new Date().toISOString() })
+      .update({ status, deactivated_at: new Date().toISOString() })
       .eq("id", tag.id);
     if (error) return toast.error(error.message);
-    toast.success("Status da TAG atualizado. O pet e o histórico são preservados.");
+    toast.success("Status da TAG atualizado. O pet e o histórico permanecem preservados.");
     load();
   };
 
-  const copiarLink = (uid: string) => {
-    navigator.clipboard.writeText(`${window.location.origin}/meus-pets?tag=${uid}`);
-    toast.success("Link copiado");
+  const copiarPaginaPublica = (uid: string) => {
+    navigator.clipboard.writeText(`${window.location.origin}/pet?id=${encodeURIComponent(uid)}`);
+    toast.success("Link público copiado");
+  };
+
+  const linkAtivacao = (uid: string, token: string) => {
+    if (prep.solicitacao) {
+      return `${window.location.origin}/meus-pets?tag=${encodeURIComponent(uid)}&codigo=${encodeURIComponent(token)}`;
+    }
+    return `${window.location.origin}/setup?id=${encodeURIComponent(uid)}&token=${encodeURIComponent(token)}`;
   };
 
   const filtradas = tags.filter((t) => {
@@ -112,19 +152,19 @@ const AdminTags = () => {
       (!q ||
         t.uid_publico.toLowerCase().includes(q) ||
         (t.pet_id || "").toLowerCase().includes(q) ||
-        (t.pet?.nome_pet || "").toLowerCase().includes(q))
+        (t.pet?.nome || "").toLowerCase().includes(q))
     );
   });
 
-  const pendentes = solicitacoes.filter((s) => s.status === "pendente");
+  const pendentes = solicitacoes.filter((s) => s.status === "pending");
 
   return (
     <AdminLayout title="TAGs">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         {[
           { label: "Total", valor: tags.length },
-          { label: "Em estoque", valor: tags.filter((t) => t.status === "estoque").length },
-          { label: "Ativas", valor: tags.filter((t) => t.status === "ativa").length },
+          { label: "Em estoque", valor: tags.filter((t) => t.status === "stock").length },
+          { label: "Ativas", valor: tags.filter((t) => t.status === "active").length },
           { label: "Solicitações pendentes", valor: pendentes.length },
         ].map((c) => (
           <div key={c.label} className="bg-card border rounded-2xl p-4">
@@ -140,10 +180,9 @@ const AdminTags = () => {
           <div className="space-y-2">
             {pendentes.map((s) => (
               <div key={s.id} className="flex flex-wrap items-center gap-3 text-sm border-b pb-2 last:border-0">
-                <span className="font-mono">{s.pet_id}</span>
-                <span className="text-muted-foreground">
-                  {new Date(s.created_at).toLocaleDateString("pt-BR")}
-                </span>
+                <span className="font-medium">{s.pet?.nome || "Pet"}</span>
+                <span className="font-mono text-xs text-muted-foreground">{s.pet_id}</span>
+                <span className="text-muted-foreground">{new Date(s.created_at).toLocaleDateString("pt-BR")}</span>
                 {s.observacoes && <span className="text-muted-foreground">{s.observacoes}</span>}
                 <Button
                   size="sm"
@@ -166,16 +205,18 @@ const AdminTags = () => {
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <div className="relative flex-1">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input className="pl-9" placeholder="Buscar por UID, pet" value={filtro} onChange={(e) => setFiltro(e.target.value)} />
+          <Input className="pl-9" placeholder="Buscar por UID ou pet" value={filtro} onChange={(e) => setFiltro(e.target.value)} />
         </div>
         <select
           className="border rounded-lg px-3 py-2 text-sm bg-background"
           value={statusFiltro}
-          onChange={(e) => setStatusFiltro(e.target.value)}
+          onChange={(e) => setStatusFiltro(e.target.value as "todas" | TagStatus)}
         >
-          {["todas", "estoque", "ativa", "inativa", "substituida"].map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
+          <option value="todas">Todas</option>
+          <option value="stock">Estoque</option>
+          <option value="active">Ativas</option>
+          <option value="inactive">Inativas</option>
+          <option value="replaced">Substituídas</option>
         </select>
         <Button onClick={() => { setPrep({ uid: "", pet_id: "", solicitacao: "" }); setTokenGerado(null); setPrepararOpen(true); }}>
           <Nfc className="w-4 h-4 mr-1" /> Preparar TAG
@@ -198,11 +239,11 @@ const AdminTags = () => {
               {filtradas.map((t) => (
                 <tr key={t.id}>
                   <td className="px-4 py-3 font-mono">{t.uid_publico}</td>
-                  <td className="px-4 py-3">{t.pet?.nome_pet || t.pet_id || "—"}</td>
-                  <td className="px-4 py-3">{t.pet?.tutores?.nome || "—"}</td>
+                  <td className="px-4 py-3">{t.pet?.nome || t.pet_id || "—"}</td>
+                  <td className="px-4 py-3">{t.pet?.tutor?.nome || "—"}</td>
                   <td className="px-4 py-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusClass[t.status] || "bg-muted"}`}>
-                      {t.status}
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusClass[t.status]}`}>
+                      {statusLabel[t.status]}
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">{new Date(t.created_at).toLocaleDateString("pt-BR")}</td>
@@ -211,14 +252,16 @@ const AdminTags = () => {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-2">
-                      <Button size="sm" variant="outline" onClick={() => copiarLink(t.uid_publico)}>
-                        <Copy className="w-3 h-3 mr-1" /> Link
-                      </Button>
-                      {t.status !== "inativa" && (
-                        <Button size="sm" variant="outline" onClick={() => alterarStatus(t, "inativa")}>Inativar</Button>
+                      {t.status === "active" && (
+                        <Button size="sm" variant="outline" onClick={() => copiarPaginaPublica(t.uid_publico)}>
+                          <Copy className="w-3 h-3 mr-1" /> Página pública
+                        </Button>
                       )}
-                      {t.status !== "substituida" && t.status === "ativa" && (
-                        <Button size="sm" variant="outline" onClick={() => alterarStatus(t, "substituida")}>Substituir</Button>
+                      {t.status === "active" && (
+                        <Button size="sm" variant="outline" onClick={() => alterarStatus(t, "inactive")}>Inativar</Button>
+                      )}
+                      {t.status === "active" && (
+                        <Button size="sm" variant="outline" onClick={() => alterarStatus(t, "replaced")}>Substituir</Button>
                       )}
                     </div>
                   </td>
@@ -235,35 +278,36 @@ const AdminTags = () => {
       <Dialog open={prepararOpen} onOpenChange={setPrepararOpen}>
         <DialogContent className="bg-background">
           <DialogHeader>
-            <DialogTitle>Preparar TAG para um pet existente</DialogTitle>
+            <DialogTitle>Preparar TAG</DialogTitle>
             <DialogDescription>
-              A TAG é vinculada ao pet que já existe — nenhum pet novo é criado e o histórico é
-              preservado. O código de ativação é entregue somente ao tutor.
+              A TAG entra em estoque com um código temporário de ativação. O código não é armazenado em texto puro e será mostrado somente agora.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
+            {prep.pet_id && (
+              <div>
+                <Label>Pet solicitado</Label>
+                <Input value={prep.pet_id} readOnly />
+              </div>
+            )}
             <div>
               <Label>UID público da TAG</Label>
-              <Input value={prep.uid} onChange={(e) => setPrep({ ...prep, uid: e.target.value })} placeholder="Ex: 9YUY9X" />
+              <Input value={prep.uid} onChange={(e) => setPrep({ ...prep, uid: e.target.value })} placeholder="Ex: AP9YUY9X" />
             </div>
-            <div>
-              <Label>ID do pet</Label>
-              <Input value={prep.pet_id} onChange={(e) => setPrep({ ...prep, pet_id: e.target.value })} placeholder="Ex: APX12Y" />
-            </div>
-            <Button onClick={preparar} disabled={salvando} className="w-full">
+            <Button onClick={preparar} disabled={salvando || !!tokenGerado} className="w-full">
               {salvando && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Preparar TAG
             </Button>
             {tokenGerado && (
               <div className="p-3 rounded-xl bg-muted text-sm space-y-2">
-                <p className="font-medium">Código de ativação do tutor</p>
+                <p className="font-medium">Código de ativação — exibição única</p>
                 <p className="font-mono break-all">{tokenGerado}</p>
+                <p className="text-xs text-muted-foreground">Validade: 7 dias. Depois de fechar esta janela o código não poderá ser recuperado.</p>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => {
-                    navigator.clipboard.writeText(
-                      `${window.location.origin}/meus-pets?tag=${prep.uid.trim().toUpperCase()}&codigo=${tokenGerado}`
-                    );
+                    const uid = prep.uid.trim().toUpperCase();
+                    navigator.clipboard.writeText(linkAtivacao(uid, tokenGerado));
                     toast.success("Link de ativação copiado");
                   }}
                 >
