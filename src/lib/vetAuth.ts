@@ -7,12 +7,12 @@ export type VetSession = {
   nome: string;
   crmv?: string | null;
   clinica?: string | null;
-  status_profissional?: string | null;
+  status?: string | null;
 };
 
 const KEY = "vet_profile";
 
-/** Cache apenas para exibição (nome/CRMV). NUNCA usado como prova de autorização. */
+/** Cache apenas para exibição. A autorização real vem do Supabase Auth + user_roles + RLS. */
 export const getVetSession = (): VetSession | null => {
   try {
     const raw = localStorage.getItem(KEY);
@@ -22,33 +22,37 @@ export const getVetSession = (): VetSession | null => {
   }
 };
 
-/** Carrega o perfil profissional do veterinário autenticado (fonte da verdade: banco). */
+/** Carrega o perfil profissional do veterinário autenticado. */
 export const loadVetSession = async (): Promise<VetSession | null> => {
   const user = await getUser();
   if (!user) {
     localStorage.removeItem(KEY);
     return null;
   }
+
   const [{ data, error }, possuiPapel] = await Promise.all([
     supabase
       .from("veterinarios")
-      .select("id, user_id, email, nome, crmv, clinica, ativo, status_profissional")
+      .select("id, user_id, email, nome, crmv, clinica, ativo, status")
       .eq("user_id", user.id)
       .maybeSingle(),
     hasRole("veterinarian"),
   ]);
+
   if (error || !data || !data.ativo || data.user_id !== user.id || !possuiPapel) {
     localStorage.removeItem(KEY);
     return null;
   }
+
   const session: VetSession = {
     id: data.id,
     email: data.email ?? user.email ?? "",
     nome: data.nome,
     crmv: data.crmv,
     clinica: data.clinica,
-    status_profissional: (data as any).status_profissional ?? null,
+    status: data.status ?? null,
   };
+
   localStorage.setItem(KEY, JSON.stringify(session));
   return session;
 };
@@ -79,12 +83,13 @@ export const vetSignup = async (dados: {
 }) => {
   const session = await signUp(dados.email, dados.senha, { nome: dados.nome, tipo: "veterinarian" });
   if (!session) return { status: "confirmacao_pendente", session: null } satisfies VetCadastroResultado;
+
   const perfil = await concluirCadastroVeterinario(dados);
   if (!perfil) throw new Error("Não foi possível validar o perfil profissional.");
   return { status: "perfil_concluido", session: perfil } satisfies VetCadastroResultado;
 };
 
-/** Cria ou repara o perfil do usuário autenticado; o e-mail vem da sessão oficial. */
+/** Cria ou atualiza o perfil veterinário do usuário autenticado e registra o papel veterinarian. */
 export const concluirCadastroVeterinario = async (dados: {
   nome: string;
   telefone?: string;
@@ -104,6 +109,7 @@ export const concluirCadastroVeterinario = async (dados: {
     p_clinica: dados.clinica || null,
     p_especialidade: dados.especialidade || null,
   });
+
   if (error) throw error;
   return loadVetSession();
 };
