@@ -92,10 +92,10 @@ const PetPublic = () => {
     : "Local não identificado";
 
   const fotoPet = (() => {
-    if (pet.foto_url) return pet.foto_url;
-    if (!pet.foto_path) return null;
-    if (/^https?:\/\//i.test(pet.foto_path)) return pet.foto_path;
-    const { data } = supabase.storage.from("pet-photos").getPublicUrl(pet.foto_path);
+    const valorFoto = pet.foto_path || pet.foto_url;
+    if (!valorFoto) return null;
+    if (/^https?:\/\//i.test(valorFoto)) return valorFoto;
+    const { data } = supabase.storage.from("pet-photos").getPublicUrl(valorFoto);
     return data.publicUrl;
   })();
 
