@@ -91,6 +91,14 @@ const PetPublic = () => {
     ? `https://maps.google.com/?q=${coords.lat},${coords.lng}`
     : "Local não identificado";
 
+  const fotoPet = (() => {
+    if (pet.foto_url) return pet.foto_url;
+    if (!pet.foto_path) return null;
+    if (/^https?:\/\//i.test(pet.foto_path)) return pet.foto_path;
+    const { data } = supabase.storage.from("pet-photos").getPublicUrl(pet.foto_path);
+    return data.publicUrl;
+  })();
+
   const enviarWhatsApp = () => {
     if (!telefone) return;
     const hora = new Date().toLocaleString("pt-BR");
@@ -136,8 +144,8 @@ const PetPublic = () => {
         <div className="flex justify-center pt-2">
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-br from-[#8B5CF6] to-[#C4B5FD] rounded-full blur-xl opacity-60 scale-110" />
-            {pet.foto_url ? (
-              <img src={pet.foto_url} alt={pet.nome_pet || "Pet"} className="relative w-56 h-56 rounded-full object-cover ring-4 ring-white shadow-2xl" />
+            {fotoPet ? (
+              <img src={fotoPet} alt={pet.nome_pet || "Pet"} className="relative w-56 h-56 rounded-full object-cover ring-4 ring-white shadow-2xl" />
             ) : (
               <div className="relative w-56 h-56 rounded-full bg-white ring-4 ring-white shadow-2xl flex items-center justify-center">
                 <PawPrint className="w-24 h-24 text-[#8B5CF6]/40" />
