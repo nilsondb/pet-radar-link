@@ -6,7 +6,7 @@ import { PetHeader } from "@/components/PetHeader";
 import { PetSidebar } from "@/components/PetSidebar";
 import { PetSwitcher } from "@/components/PetSwitcher";
 import { Button } from "@/components/ui/button";
-import { Loader2, PawPrint, MapPin, Clock, Calendar, ShieldCheck, Siren, HeartPulse, Syringe, Brain, Bot, Stethoscope } from "lucide-react";
+import { Loader2, PawPrint, MapPin, Clock, Calendar, ShieldCheck, Siren, HeartPulse, Syringe, Brain, Stethoscope } from "lucide-react";
 import { toast } from "sonner";
 
 const Dashboard = () => {
@@ -88,14 +88,13 @@ const Dashboard = () => {
           {pet.status_perdido ? <Button onClick={() => toggleStatus(false)} disabled={updating} className="w-full bg-success hover:bg-success/90 text-success-foreground" size="lg">✅ Marcar como encontrado</Button> : <Button onClick={() => toggleStatus(true)} disabled={updating} variant="destructive" className="w-full" size="lg">🚨 Marcar como perdido</Button>}
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
           {[
             { to: `/saude?id=${id}`, label: "Saúde", icon: HeartPulse },
             { to: `/vacinas?id=${id}`, label: "Vacinas", icon: Syringe },
             { to: `/historico?id=${id}`, label: "Histórico", icon: Brain },
-            { to: `/assistente-ia?id=${id}`, label: "Assistente IA", icon: Bot },
             { to: `/veterinarios?id=${id}`, label: "Profissionais autorizados", icon: Stethoscope },
-          ].map(({ to, label, icon: Icon }) => <Link key={to} to={to} className="pet-card flex flex-col items-center justify-center gap-2 py-5 hover:bg-accent/40 active:scale-[0.98] transition-all"><div className="w-12 h-12 rounded-2xl header-gradient flex items-center justify-center text-primary-foreground shadow-md"><Icon className="w-6 h-6" /></div><span className="text-sm font-semibold">{label}</span></Link>)}
+          ].map(({ to, label, icon: Icon }) => <Link key={to} to={to} className="pet-card flex flex-col items-center justify-center gap-2 py-5 hover:bg-accent/40 active:scale-[0.98] transition-all text-center"><div className="w-12 h-12 rounded-2xl header-gradient flex items-center justify-center text-primary-foreground shadow-md"><Icon className="w-6 h-6" /></div><span className="text-sm font-semibold">{label}</span></Link>)}
         </div>
       </main>
     </div>
